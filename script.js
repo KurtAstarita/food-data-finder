@@ -1,7 +1,6 @@
 // script.js
 
 // 1. --- Global Constants & Variable Declarations ---
-// This is the correct, consistent nutrientGroups object we worked on.
 const nutrientGroups = {
     "Macros": {
         "Energy": { "100g": "Calories (per 100g)", "gram": "Calories (per gram)", "ounce": "Calories (per ounce)" },
@@ -36,11 +35,10 @@ const nutrientGroups = {
     }
 };
 
-// This 'foodData' variable should be declared ONCE at the top level
-// so all functions can access the same data after it's loaded.
 let foodData = [];
 let currentPage = 1;
-let itemsPerPage; // Will be set from itemsPerPageSelect value later
+let itemsPerPage;
+let currentFoodDetails = null; // Store the food object currently being displayed in details
 
 // 2. --- Asynchronous Data Loading Function (Defined once globally) ---
 async function loadFoodData() {
@@ -53,7 +51,6 @@ async function loadFoodData() {
         console.log(`Loaded ${foodData.length} food items.`);
         document.getElementById('totalFoodsCount').textContent = foodData.length; // Update total count
 
-        // After data is loaded, set the initial itemsPerPage and render the table
         itemsPerPage = parseInt(document.getElementById('itemsPerPageSelect').value);
         renderTable(); // Initial display of the "chart"
     } catch (error) {
@@ -71,25 +68,23 @@ function renderTable() {
     const prevPageButton = document.getElementById('prevPage');
     const nextPageButton = document.getElementById('nextPage');
 
-    // For static or simple text inserts, .textContent is safer and doesn't need DOMPurify
-    tableBody.innerHTML = ''; // Clearing innerHTML is fine for a fixed string
-    tableHeader.innerHTML = ''; // Clearing innerHTML is fine for a fixed string
+    tableBody.innerHTML = ''; // Clear existing rows
+    tableHeader.innerHTML = ''; // Clear existing headers
 
     if (foodData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="100">No data to display.</td></tr>'; // Static HTML, fine
+        tableBody.innerHTML = '<tr><td colspan="100">No data to display.</td></tr>'; // Fallback
         return;
     }
 
-    // Determine columns to display in the table
-    const sampleFood = foodData[0]; // Assuming first item is representative
+    const sampleFood = foodData[0];
     const primaryCols = ['Food Name'];
     const nutrientColsForTable = [
-        "Calories (per 100g)", // Use the (per 100g) keys for consistency with nutrientGroups
+        "Calories (per 100g)",
         "Protein (per 100g)",
         "Fat (per 100g)",
         "Carbohydrates (per 100g)",
         "Fiber dietary (per 100g)",
-        "Sodium (per 100g)" // Example, added Sodium for consistency
+        "Sodium (per 100g)"
     ];
        
     const displayColumns = [...primaryCols];
@@ -102,7 +97,6 @@ function renderTable() {
     // Create table headers
     displayColumns.forEach(col => {
         const th = document.createElement('th');
-        // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
         th.textContent = col.replace(/\s*\(.*\)\s*$/, ''); // Remove units for cleaner display
         tableHeader.appendChild(th);
     });
@@ -114,7 +108,7 @@ function renderTable() {
 
     // Calculate pagination
     const totalPages = Math.ceil(foodData.length / itemsPerPage);
-    currentPage = Math.min(Math.max(1, currentPage), totalPages); // Keep current page within bounds
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, foodData.length);
@@ -126,18 +120,16 @@ function renderTable() {
         displayColumns.forEach(col => {
             const td = document.createElement('td');
             const value = food[col];
-            // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
             td.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
             tr.appendChild(td);
         });
 
-        // Add Details button
         const tdDetails = document.createElement('td');
         const detailButton = document.createElement('button');
-        detailButton.textContent = 'View'; // Text content, safe
-        detailButton.classList.add('detail-button'); // Add class for styling
+        detailButton.textContent = 'View';
+        detailButton.classList.add('detail-button');
         detailButton.addEventListener('click', () => {
-            document.getElementById('searchResults').innerHTML = ''; // Clearing HTML, safe
+            document.getElementById('searchResults').innerHTML = ''; // Clear search results list
             displayFoodDetails(food);
             document.getElementById('foodDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -148,7 +140,7 @@ function renderTable() {
     });
 
     // Update pagination info
-    pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`; // Text content, safe
+    pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
     prevPageButton.disabled = currentPage === 1;
     nextPageButton.disabled = currentPage === totalPages;
 }
@@ -159,11 +151,11 @@ function displaySearchResults(query) {
     const searchResultsList = document.getElementById('searchResults');
     const foodDetailsDiv = document.getElementById('foodDetails');
 
-    searchResultsList.innerHTML = ''; // Clearing HTML, safe
-    foodDetailsDiv.style.display = 'none'; // Hiding element, safe
+    searchResultsList.innerHTML = ''; // Clear previous results
+    foodDetailsDiv.style.display = 'none'; // Hide details when searching
 
     if (!query) {
-        searchResultsList.innerHTML = '<p class="info-message">Please enter a food name to search.</p>'; // Static HTML, safe
+        searchResultsList.innerHTML = '<p class="info-message">Please enter a food name to search.</p>';
         return;
     }
 
@@ -173,23 +165,17 @@ function displaySearchResults(query) {
     );
 
     if (results.length === 0) {
-        // String literal with dynamic content, but used with backticks.
-        // If query itself could contain HTML, this would need sanitization.
-        // For search queries, often the HTML context won't be executed directly.
-        // However, if it were placed in innerHTML directly, DOMPurify would be wise.
         searchResultsList.innerHTML = `<p class="info-message">No food found matching "${DOMPurify.sanitize(query)}". Try a different search term.</p>`; 
         return;
     }
 
-    // Limit to top 10 results for search dropdown
     results.slice(0, 10).forEach((food, index) => {
         const li = document.createElement('li');
         li.classList.add('result-item');
-        // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
         li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`; 
         li.addEventListener('click', () => {
-            searchResultsList.innerHTML = ''; // Clearing HTML, safe
-            foodDetailsDiv.style.display = 'block'; // Showing element, safe
+            searchResultsList.innerHTML = ''; // Clear results after selecting one
+            foodDetailsDiv.style.display = 'block'; // Ensure details div is visible
             displayFoodDetails(food);
             foodDetailsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -198,60 +184,152 @@ function displaySearchResults(query) {
 
     if (results.length > 10) {
         const moreResultsInfo = document.createElement('li');
-        moreResultsInfo.classList.add('info-message-item'); // Add a class for styling
-        // Here, `results.length` is a number, no sanitization needed.
+        moreResultsInfo.classList.add('info-message-item');
         moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`; 
         searchResultsList.appendChild(moreResultsInfo);
+    }
+}
+
+/**
+ * Renders or re-renders the nutrient details based on the current food, quantity, and unit.
+ * @param {Object} food - The food item object.
+ * @param {number} quantity - The user-specified quantity.
+ * @param {string} unit - The selected unit ('100g', 'gram', 'ounce').
+ */
+function updateNutrientDetailsDisplay(food, quantity, unit) {
+    const nutrientDetailsDisplay = document.getElementById('nutrientDetailsDisplay');
+    nutrientDetailsDisplay.innerHTML = ''; // Clear previous details
+
+    for (const groupCategory in nutrientGroups) {
+        const groupSection = document.createElement('div');
+        groupSection.className = 'nutrient-group';
+
+        const groupHeading = document.createElement('h3');
+        groupHeading.textContent = groupCategory;
+        groupSection.appendChild(groupHeading);
+
+        const groupList = document.createElement('ul');
+        groupList.className = 'nutrient-list';
+
+        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
+            const nutrientKeys = nutrientGroups[groupCategory][nutrientDisplayName];
+            
+            // Determine the base key (per 100g, per gram, or per ounce) to use from the food data
+            let baseNutrientKey = nutrientKeys[unit]; // Tries to match the selected unit directly
+            
+            // Fallback if the specific unit key isn't found in food data or is '100g' for scaling
+            if (!food.hasOwnProperty(baseNutrientKey) || unit === '100g') {
+                baseNutrientKey = nutrientKeys['100g'] || nutrientKeys['gram'] || nutrientKeys['ounce'];
+                // If the selected unit is 100g, we need to ensure we use the 100g key if available
+                if (unit === '100g' && nutrientKeys['100g']) {
+                    baseNutrientKey = nutrientKeys['100g'];
+                }
+            }
+            
+            if (food.hasOwnProperty(baseNutrientKey)) {
+                const listItem = document.createElement('li');
+                const baseValue = food[baseNutrientKey];
+                let calculatedValue = baseValue;
+                let displayUnit = ''; // To show in parentheses after the value
+
+                // Perform calculation based on the selected unit
+                if (typeof baseValue === 'number' && !isNaN(baseValue)) {
+                    if (unit === 'gram') {
+                        calculatedValue = baseValue * quantity;
+                        displayUnit = 'g';
+                    } else if (unit === 'ounce') {
+                        calculatedValue = baseValue * quantity;
+                        displayUnit = 'oz';
+                    } else if (unit === '100g') {
+                        // Scale 100g value if quantity is not 100
+                        calculatedValue = (baseValue / 100) * quantity;
+                        displayUnit = 'g'; // Display in grams if 100g unit selected
+                    }
+                } else {
+                    calculatedValue = 'N/A'; // If base value is not a valid number
+                }
+
+                const displayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
+                
+                // Sanitize all parts before inserting into innerHTML
+                const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
+                const sanitizedDisplayValue = DOMPurify.sanitize(displayValue.toString());
+                const sanitizedDisplayUnit = DOMPurify.sanitize(displayUnit);
+
+                listItem.innerHTML = `<strong>${sanitizedDisplayName}:</strong> ${sanitizedDisplayValue}${sanitizedDisplayUnit ? ` ${sanitizedDisplayUnit}` : ''}`;
+                groupList.appendChild(listItem);
+            }
+        }
+        groupSection.appendChild(groupList);
+        nutrientDetailsDisplay.appendChild(groupSection);
     }
 }
 
 // Function to display detailed nutrition for a selected food (from search or table)
 function displayFoodDetails(food) {
     const foodDetailsDiv = document.getElementById('foodDetails');
-    foodDetailsDiv.innerHTML = ''; // Clearing HTML, safe
-    foodDetailsDiv.style.display = 'block'; // Showing element, safe
-
+    const quantityInput = document.getElementById('quantityInput');
+    const unitSelect = document.getElementById('unitSelect');
     const foodNameHeading = document.createElement('h2');
-    // Using .textContent for Food Name, which is safer and doesn't need DOMPurify
-    foodNameHeading.textContent = food['Food Name']; 
-    foodDetailsDiv.appendChild(foodNameHeading);
+    
+    // Clear previous details and show the section
+    foodDetailsDiv.innerHTML = ''; // Clear everything including quantity inputs first
+    foodDetailsDiv.style.display = 'block';
 
-    for (const groupCategory in nutrientGroups) { // Iterates through "Macros", "Minerals", "Vitamins"
-        const groupSection = document.createElement('div');
-        groupSection.className = 'nutrient-group'; // For CSS styling
+    // Re-append the quantity input group, as we cleared the entire div
+    const quantityInputGroup = document.createElement('div');
+    quantityInputGroup.classList.add('quantity-input-group');
+    quantityInputGroup.innerHTML = `
+        <label for="quantityInput">Quantity:</label>
+        <input type="number" id="quantityInput" value="100" min="1" step="any">
+        <select id="unitSelect">
+            <option value="100g">100g</option>
+            <option value="gram">gram</option>
+            <option value="ounce">ounce</option>
+        </select>
+    `;
+    foodDetailsDiv.appendChild(quantityInputGroup);
 
-        const groupHeading = document.createElement('h3');
-        groupHeading.textContent = groupCategory; // e.g., "Macros" - textContent, safe
-        groupSection.appendChild(groupHeading);
+    // Re-get the elements after re-appending them to the DOM
+    const reconnectedQuantityInput = document.getElementById('quantityInput');
+    const reconnectedUnitSelect = document.getElementById('unitSelect');
+    const nutrientDetailsDisplay = document.createElement('div');
+    nutrientDetailsDisplay.id = 'nutrientDetailsDisplay';
+    foodDetailsDiv.appendChild(nutrientDetailsDisplay);
 
-        const groupList = document.createElement('ul');
-        groupList.className = 'nutrient-list'; // For CSS styling
 
-        // Iterate through each nutrient within the group (e.g., "Energy", "Protein")
-        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
-            const nutrientKeys = nutrientGroups[groupCategory][nutrientDisplayName];
-            let nutrientKeyToUse = nutrientKeys['100g'] || nutrientKeys['gram'] || nutrientKeys['ounce'];
+    foodNameHeading.textContent = food['Food Name'];
+    foodDetailsDiv.prepend(foodNameHeading); // Prepend to place it before quantity input
 
-            if (food.hasOwnProperty(nutrientKeyToUse)) {
-                const listItem = document.createElement('li');
-                const value = food[nutrientKeyToUse];
+    // Store the current food globally for recalculation
+    currentFoodDetails = food;
 
-                const displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
-                
-                // *** Applying DOMPurify here ***
-                // Sanitize all parts before inserting into innerHTML
-                const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
-                const sanitizedDisplayValue = DOMPurify.sanitize(displayValue.toString()); // Ensure it's a string for DOMPurify
-                const sanitizedUnitPart = DOMPurify.sanitize(nutrientKeyToUse.split('(')[1] || '');
+    // Set initial values for quantity and unit when a new food is displayed
+    reconnectedQuantityInput.value = 100;
+    reconnectedUnitSelect.value = '100g';
 
-                listItem.innerHTML = `<strong>${sanitizedDisplayName}:</strong> ${sanitizedDisplayValue} (${sanitizedUnitPart}`;
-                groupList.appendChild(listItem);
-            }
+    // Initial display of nutrient details based on default quantity/unit
+    updateNutrientDetailsDisplay(currentFoodDetails, 
+                                 parseFloat(reconnectedQuantityInput.value), 
+                                 reconnectedUnitSelect.value);
+
+    // Add event listeners for quantity and unit changes
+    reconnectedQuantityInput.oninput = () => {
+        if (currentFoodDetails) {
+            updateNutrientDetailsDisplay(currentFoodDetails, 
+                                         parseFloat(reconnectedQuantityInput.value), 
+                                         reconnectedUnitSelect.value);
         }
-        groupSection.appendChild(groupList);
-        foodDetailsDiv.appendChild(groupSection);
-    }
+    };
+    reconnectedUnitSelect.onchange = () => {
+        if (currentFoodDetails) {
+            updateNutrientDetailsDisplay(currentFoodDetails, 
+                                         parseFloat(reconnectedQuantityInput.value), 
+                                         reconnectedUnitSelect.value);
+        }
+    };
 }
+
 
 // --- Event Listeners and Initial Setup (inside DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -314,6 +392,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial load of data when the page loads
-    // Call the GLOBAL loadFoodData function.
     loadFoodData();
 });
