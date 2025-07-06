@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchInput');
     const searchButton = document.getElementById('searchButton');
-    const searchResultsDiv = document.getElementById('searchResults');
+    const searchResultsList = document.getElementById('searchResults'); // Changed from Div to List
     const foodDetailsDiv = document.getElementById('foodDetails');
     const totalFoodsCountSpan = document.getElementById('totalFoodsCount');
     const downloadJsonButton = document.getElementById('downloadJsonButton');
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable();
         } catch (error) {
             console.error("Could not load food data:", error);
-            searchResultsDiv.innerHTML = '<p class="error-message">Error loading food data. Please ensure food_data.json exists and is valid.</p>';
+            searchResultsList.innerHTML = '<p class="error-message">Error loading food data. Please ensure food_data.json exists and is valid.</p>';
             totalFoodsCountSpan.textContent = 'Error';
         }
     }
@@ -51,29 +51,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Determine columns to display in the table
         // We'll show Food Name, and then some common nutrients
-        const sampleFood = foodData[0];
+        const sampleFood = foodData[0]; // Assuming first item is representative
         const primaryCols = ['Food Name'];
-        const nutrientPrefix = ['Calories (per 100g)', 'Protein (per 100g)', 'Fat (per 100g)', 'Carbohydrates (per 100g)', 'Fiber dietary (per 100g)', 'Sodium (per 100g)'];
+        // Use exact nutrient names from your data
+        const nutrientColsForTable = [
+            'Energy (kcal)', 'Protein (g)', 'Total lipid (fat) (g)', 'Carbohydrate, by difference (g)',
+            'Fiber, total dietary (g)', 'Sugars, total (g)', 'Sodium, Na (mg)' // Adjusted based on your data names
+        ];
         
-        // Dynamically get available nutrients for header, prioritize selected
-        const availableNutrientCols = Object.keys(sampleFood).filter(key => 
-            key.includes('(per 100g)') && !primaryCols.includes(key)
-        ).sort(); // Sort them alphabetically for consistency
-
-        const displayColumns = [...primaryCols, ...nutrientPrefix.filter(col => availableNutrientCols.includes(col))];
+        // Ensure these columns exist in the first food item, otherwise they won't show
+        const displayColumns = [...primaryCols];
+        nutrientColsForTable.forEach(col => {
+            if (sampleFood.hasOwnProperty(col)) {
+                displayColumns.push(col);
+            }
+        });
 
         // Create table headers
         displayColumns.forEach(col => {
             const th = document.createElement('th');
-            th.textContent = col;
+            // Remove units from headers for cleaner display in the table
+            th.textContent = col.replace(/\s*\(.*\)\s*$/, ''); 
             tableHeader.appendChild(th);
         });
 
-        // Add a "View Details" column
+        // Add a "View Details" column header
         const thDetails = document.createElement('th');
         thDetails.textContent = 'Details';
         tableHeader.appendChild(thDetails);
-
 
         // Calculate pagination
         const totalPages = Math.ceil(foodData.length / itemsPerPage);
@@ -88,7 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             displayColumns.forEach(col => {
                 const td = document.createElement('td');
-                td.textContent = food[col] !== undefined ? food[col] : 'N/A';
+                const value = food[col];
+                // Format numbers to 2 decimal places, show 'N/A' if undefined/null
+                td.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined ? value : 'N/A');
                 tr.appendChild(td);
             });
 
@@ -99,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             detailButton.classList.add('detail-button'); // Add class for styling
             detailButton.addEventListener('click', () => {
                 // Clear search results and scroll to food details
-                searchResultsDiv.innerHTML = ''; 
+                searchResultsList.innerHTML = ''; // Clear search results list
                 displayFoodDetails(food);
                 foodDetailsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
@@ -137,42 +144,45 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable();
     });
 
-    // --- Search functionality (mostly existing, but updated display logic) ---
+    // --- Search functionality ---
     function displaySearchResults(query) {
-        searchResultsDiv.innerHTML = ''; // Clear previous results
+        searchResultsList.innerHTML = ''; // Clear previous results
         foodDetailsDiv.style.display = 'none'; // Hide details when searching
 
         if (!query) {
-            searchResultsDiv.innerHTML = '<p class="info-message">Please enter a food name to search.</p>';
+            searchResultsList.innerHTML = '<p class="info-message">Please enter a food name to search.</p>';
             return;
         }
 
         const lowerCaseQuery = query.toLowerCase();
-        const results = foodData.filter(food => 
+        const results = foodData.filter(food =>
             food['Food Name'] && food['Food Name'].toLowerCase().includes(lowerCaseQuery)
         );
 
         if (results.length === 0) {
-            searchResultsDiv.innerHTML = `<p class="info-message">No food found matching "${query}". Try a different search term.</p>`;
+            searchResultsList.innerHTML = `<p class="info-message">No food found matching "${query}". Try a different search term.</p>`;
             return;
         }
 
-        const ul = document.createElement('ul');
-        ul.style.listStyleType = 'none';
-        ul.style.padding = '0';
-
-        results.slice(0, 10).forEach((food, index) => { // Limit to top 10 results
+        // Limit to top 10 results for search dropdown
+        results.slice(0, 10).forEach((food, index) => {
             const li = document.createElement('li');
             li.classList.add('result-item');
             li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`;
-            //li.dataset.fdcId = food['fdc_id']; // Not strictly needed with direct object pass
-            li.addEventListener('click', () => displayFoodDetails(food));
-            ul.appendChild(li);
+            li.addEventListener('click', () => {
+                searchResultsList.innerHTML = ''; // Clear results after selecting one
+                foodDetailsDiv.style.display = 'block'; // Ensure details div is visible
+                displayFoodDetails(food);
+                foodDetailsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            searchResultsList.appendChild(li);
         });
-        searchResultsDiv.appendChild(ul);
 
         if (results.length > 10) {
-            searchResultsDiv.innerHTML += `<p class="info-message">... and ${results.length - 10} more. Refine your search or select from the top 10.</p>`;
+            const moreResultsInfo = document.createElement('li');
+            moreResultsInfo.classList.add('info-message-item'); // Add a class for styling
+            moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`;
+            searchResultsList.appendChild(moreResultsInfo);
         }
     }
 
@@ -181,19 +191,64 @@ document.addEventListener('DOMContentLoaded', () => {
         foodDetailsDiv.innerHTML = ''; // Clear previous details
         foodDetailsDiv.style.display = 'block'; // Show the details section
 
-        const h2 = document.createElement('h2');
-        h2.textContent = food['Food Name'];
-        foodDetailsDiv.appendChild(h2);
+        const foodNameHeading = document.createElement('h2');
+        foodNameHeading.textContent = food['Food Name'];
+        foodDetailsDiv.appendChild(foodNameHeading);
 
-        // Iterate over all keys (columns) in the food object
-        for (const key in food) {
-            // Skip FDC ID, and the internal 'name' column if it was generated during python processing
-            // The 'name' column is the original nutrient name from nutrient.csv before renaming
-            // We want to show the processed 'Food Name' and the calculated nutrient columns
-            if (key !== 'fdc_id' && key !== 'name') { 
-                const p = document.createElement('p');
-                p.innerHTML = `<strong>${key}:</strong> ${food[key]}`;
-                foodDetailsDiv.appendChild(p);
+        // Define nutrient groups. Ensure these match the exact keys from your food_data.json
+        const nutrientGroups = {
+            'Macros & Energy (per 100g)': [
+                'Energy (kcal)', 'Protein (g)', 'Total lipid (fat) (g)',
+                'Carbohydrate, by difference (g)', 'Fiber, total dietary (g)', 'Sugars, total (g)',
+                'Water (g)'
+            ],
+            'Vitamins (per 100g)': [
+                'Vitamin A, RAE (mcg)', 'Vitamin D (D2 + D3) (mcg)', 'Vitamin E (alpha-tocopherol) (mg)',
+                'Vitamin K (phylloquinone) (mcg)', 'Vitamin C, total ascorbic acid (mg)', 'Thiamin (mg)',
+                'Riboflavin (mg)', 'Niacin (mg)', 'Vitamin B-6 (mg)', 'Folate, DFE (mcg)',
+                'Vitamin B-12 (mcg)'
+            ],
+            'Minerals (per 100g)': [
+                'Calcium, Ca (mg)', 'Iron, Fe (mg)', 'Magnesium, Mg (mg)', 'Phosphorus, P (mg)',
+                'Potassium, K (mg)', 'Sodium, Na (mg)', 'Zinc, Zn (mg)', 'Copper, Cu (mg)',
+                'Manganese, Mn (mg)', 'Selenium, Se (mcg)'
+            ],
+            'Other (per 100g)': [ // Add other specific nutrients if you have them and want to display them here
+                'Cholesterol (mg)'
+            ]
+        };
+
+        // Iterate through each group and create a section for it
+        for (const groupName in nutrientGroups) {
+            if (nutrientGroups.hasOwnProperty(groupName)) {
+                const groupSection = document.createElement('div');
+                groupSection.className = 'nutrient-group'; // For CSS styling
+
+                const groupHeading = document.createElement('h3');
+                groupHeading.textContent = groupName;
+                groupSection.appendChild(groupHeading);
+
+                const groupList = document.createElement('ul');
+                groupList.className = 'nutrient-list'; // For CSS styling
+
+                nutrientGroups[groupName].forEach(nutrientKey => {
+                    // Check if the nutrient key exists in the food object
+                    if (food.hasOwnProperty(nutrientKey)) {
+                        const listItem = document.createElement('li');
+                        const value = food[nutrientKey];
+
+                        // Format numeric values to 2 decimal places, keep 'N/A' as is
+                        const displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : value;
+
+                        // Remove unit from key for cleaner display (e.g., "Protein (g)" becomes "Protein")
+                        const cleanNutrientName = nutrientKey.replace(/\s*\(.*\)\s*$/, ''); // Removes (unit) at end
+
+                        listItem.innerHTML = `<strong>${cleanNutrientName}:</strong> ${displayValue}`;
+                        groupList.appendChild(listItem);
+                    }
+                });
+                groupSection.appendChild(groupList);
+                detailsDiv.appendChild(groupSection);
             }
         }
     }
@@ -211,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     });
-
 
     // Event Listeners for search
     searchButton.addEventListener('click', () => {
