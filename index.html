@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Nutrition Finder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Food Nutrition Finder</h1>
+        <div class="search-section">
+            <input type="text" id="searchInput" placeholder="Search for a food item...">
+            <button id="searchButton">Search</button>
+        </div>
+        
+        <div id="searchResults" class="search-results">
+            </div>
+
+        <div id="foodDetails" class="food-details">
+            </div>
+
+        <hr> <h2>Explore All Foods</h2>
+        <div class="data-overview">
+            <p>Total Foods Available: <span id="totalFoodsCount">Loading...</span></p>
+            <button id="downloadJsonButton">Download Full Data (JSON)</button>
+        </div>
+
+        <div class="all-foods-section">
+            <div class="pagination-controls">
+                <button id="prevPage">Previous</button>
+                <span id="pageInfo">Page 1 of X</span>
+                <button id="nextPage">Next</button>
+                <select id="itemsPerPageSelect">
+                    <option value="25">25 per page</option>
+                    <option value="50" selected>50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table id="foodTable">
+                    <thead>
+                        <tr id="tableHeader">
+                            </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
