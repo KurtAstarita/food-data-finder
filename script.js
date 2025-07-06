@@ -71,20 +71,18 @@ function renderTable() {
     const prevPageButton = document.getElementById('prevPage');
     const nextPageButton = document.getElementById('nextPage');
 
-    tableBody.innerHTML = ''; // Clear existing rows
-    tableHeader.innerHTML = ''; // Clear existing headers
+    // For static or simple text inserts, .textContent is safer and doesn't need DOMPurify
+    tableBody.innerHTML = ''; // Clearing innerHTML is fine for a fixed string
+    tableHeader.innerHTML = ''; // Clearing innerHTML is fine for a fixed string
 
     if (foodData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="100">No data to display.</td></tr>'; // Fallback
+        tableBody.innerHTML = '<tr><td colspan="100">No data to display.</td></tr>'; // Static HTML, fine
         return;
     }
 
     // Determine columns to display in the table
     const sampleFood = foodData[0]; // Assuming first item is representative
     const primaryCols = ['Food Name'];
-    // IMPORTANT: THESE KEYS MIGHT NEED ADJUSTMENT based on your exact JSON structure.
-    // The keys in nutrientGroups are "Calories (per 100g)", etc.
-    // If your table needs "Energy (kcal)", "Protein (g)" etc., ensure those specific keys exist in your JSON.
     const nutrientColsForTable = [
         "Calories (per 100g)", // Use the (per 100g) keys for consistency with nutrientGroups
         "Protein (per 100g)",
@@ -104,6 +102,7 @@ function renderTable() {
     // Create table headers
     displayColumns.forEach(col => {
         const th = document.createElement('th');
+        // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
         th.textContent = col.replace(/\s*\(.*\)\s*$/, ''); // Remove units for cleaner display
         tableHeader.appendChild(th);
     });
@@ -127,7 +126,7 @@ function renderTable() {
         displayColumns.forEach(col => {
             const td = document.createElement('td');
             const value = food[col];
-            // Format numbers to 2 decimal places, show 'N/A' if undefined/null/empty string
+            // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
             td.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
             tr.appendChild(td);
         });
@@ -135,10 +134,10 @@ function renderTable() {
         // Add Details button
         const tdDetails = document.createElement('td');
         const detailButton = document.createElement('button');
-        detailButton.textContent = 'View';
+        detailButton.textContent = 'View'; // Text content, safe
         detailButton.classList.add('detail-button'); // Add class for styling
         detailButton.addEventListener('click', () => {
-            document.getElementById('searchResults').innerHTML = ''; // Clear search results list
+            document.getElementById('searchResults').innerHTML = ''; // Clearing HTML, safe
             displayFoodDetails(food);
             document.getElementById('foodDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -149,7 +148,7 @@ function renderTable() {
     });
 
     // Update pagination info
-    pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+    pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`; // Text content, safe
     prevPageButton.disabled = currentPage === 1;
     nextPageButton.disabled = currentPage === totalPages;
 }
@@ -160,11 +159,11 @@ function displaySearchResults(query) {
     const searchResultsList = document.getElementById('searchResults');
     const foodDetailsDiv = document.getElementById('foodDetails');
 
-    searchResultsList.innerHTML = ''; // Clear previous results
-    foodDetailsDiv.style.display = 'none'; // Hide details when searching
+    searchResultsList.innerHTML = ''; // Clearing HTML, safe
+    foodDetailsDiv.style.display = 'none'; // Hiding element, safe
 
     if (!query) {
-        searchResultsList.innerHTML = '<p class="info-message">Please enter a food name to search.</p>';
+        searchResultsList.innerHTML = '<p class="info-message">Please enter a food name to search.</p>'; // Static HTML, safe
         return;
     }
 
@@ -174,7 +173,11 @@ function displaySearchResults(query) {
     );
 
     if (results.length === 0) {
-        searchResultsList.innerHTML = `<p class="info-message">No food found matching "${query}". Try a different search term.</p>`;
+        // String literal with dynamic content, but used with backticks.
+        // If query itself could contain HTML, this would need sanitization.
+        // For search queries, often the HTML context won't be executed directly.
+        // However, if it were placed in innerHTML directly, DOMPurify would be wise.
+        searchResultsList.innerHTML = `<p class="info-message">No food found matching "${DOMPurify.sanitize(query)}". Try a different search term.</p>`; 
         return;
     }
 
@@ -182,10 +185,11 @@ function displaySearchResults(query) {
     results.slice(0, 10).forEach((food, index) => {
         const li = document.createElement('li');
         li.classList.add('result-item');
-        li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`;
+        // .textContent is used, which automatically escapes HTML, no DOMPurify needed here
+        li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`; 
         li.addEventListener('click', () => {
-            searchResultsList.innerHTML = ''; // Clear results after selecting one
-            foodDetailsDiv.style.display = 'block'; // Ensure details div is visible
+            searchResultsList.innerHTML = ''; // Clearing HTML, safe
+            foodDetailsDiv.style.display = 'block'; // Showing element, safe
             displayFoodDetails(food);
             foodDetailsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -195,30 +199,29 @@ function displaySearchResults(query) {
     if (results.length > 10) {
         const moreResultsInfo = document.createElement('li');
         moreResultsInfo.classList.add('info-message-item'); // Add a class for styling
-        moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`;
+        // Here, `results.length` is a number, no sanitization needed.
+        moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`; 
         searchResultsList.appendChild(moreResultsInfo);
     }
 }
 
 // Function to display detailed nutrition for a selected food (from search or table)
 function displayFoodDetails(food) {
-    // Use the already defined foodDetailsDiv variable (no need to redefine it here)
     const foodDetailsDiv = document.getElementById('foodDetails');
-    foodDetailsDiv.innerHTML = ''; // Clear previous details
-    foodDetailsDiv.style.display = 'block'; // Show the details section
+    foodDetailsDiv.innerHTML = ''; // Clearing HTML, safe
+    foodDetailsDiv.style.display = 'block'; // Showing element, safe
 
     const foodNameHeading = document.createElement('h2');
-    foodNameHeading.textContent = food['Food Name'];
+    // Using .textContent for Food Name, which is safer and doesn't need DOMPurify
+    foodNameHeading.textContent = food['Food Name']; 
     foodDetailsDiv.appendChild(foodNameHeading);
 
-    // IMPORTANT: USE THE GLOBAL nutrientGroups object defined at the top of the script!
-    // Do NOT redefine it here.
     for (const groupCategory in nutrientGroups) { // Iterates through "Macros", "Minerals", "Vitamins"
         const groupSection = document.createElement('div');
         groupSection.className = 'nutrient-group'; // For CSS styling
 
         const groupHeading = document.createElement('h3');
-        groupHeading.textContent = groupCategory; // e.g., "Macros"
+        groupHeading.textContent = groupCategory; // e.g., "Macros" - textContent, safe
         groupSection.appendChild(groupHeading);
 
         const groupList = document.createElement('ul');
@@ -227,9 +230,6 @@ function displayFoodDetails(food) {
         // Iterate through each nutrient within the group (e.g., "Energy", "Protein")
         for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
             const nutrientKeys = nutrientGroups[groupCategory][nutrientDisplayName];
-            
-            // Prioritize '100g' display for details, then 'gram', then 'ounce'
-            // You can adjust this logic if you have a default unit selector for details
             let nutrientKeyToUse = nutrientKeys['100g'] || nutrientKeys['gram'] || nutrientKeys['ounce'];
 
             if (food.hasOwnProperty(nutrientKeyToUse)) {
@@ -238,8 +238,13 @@ function displayFoodDetails(food) {
 
                 const displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
                 
-                // Use the readable display name for the nutrient (e.g., "Energy", "Protein")
-                listItem.innerHTML = `<strong>${nutrientDisplayName}:</strong> ${displayValue} (${nutrientKeyToUse.split('(')[1] || ''}`; // Extracts unit like "per 100g)"
+                // *** Applying DOMPurify here ***
+                // Sanitize all parts before inserting into innerHTML
+                const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
+                const sanitizedDisplayValue = DOMPurify.sanitize(displayValue.toString()); // Ensure it's a string for DOMPurify
+                const sanitizedUnitPart = DOMPurify.sanitize(nutrientKeyToUse.split('(')[1] || '');
+
+                listItem.innerHTML = `<strong>${sanitizedDisplayName}:</strong> ${sanitizedDisplayValue} (${sanitizedUnitPart}`;
                 groupList.appendChild(listItem);
             }
         }
