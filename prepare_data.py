@@ -38,7 +38,11 @@ def load_and_prepare_data(data_dir):
         # For a "huge chart" of general foods, 'SR Legacy' is usually the largest source.
         # 'Foundation' is also good for raw ingredients.
         # Add other types if you want them in your main "chart" (e.g., 'Branded').
+<<<<<<< HEAD
         target_data_types = ['foundation_food'] 
+=======
+        target_data_types = ['foundation_food']
+>>>>>>> d072602371185eefafdf4b0bd096ae31e16fb7d8
 
         # Filter food_df to include only desired data types
         # This will be our base DataFrame for foods, replacing the old foundation_foods_with_desc_df
