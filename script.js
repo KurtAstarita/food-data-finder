@@ -186,72 +186,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Function to display detailed nutrition for a selected food (from search or table)
-    function displayFoodDetails(food) {
-        foodDetailsDiv.innerHTML = ''; // Clear previous details
-        foodDetailsDiv.style.display = 'block'; // Show the details section
+// Function to display detailed nutrition for a selected food (from search or table)
+function displayFoodDetails(food) {
+    // Use the already defined foodDetailsDiv variable
+    foodDetailsDiv.innerHTML = ''; // Clear previous details
+    foodDetailsDiv.style.display = 'block'; // Show the details section
 
-        const foodNameHeading = document.createElement('h2');
-        foodNameHeading.textContent = food['Food Name'];
-        foodDetailsDiv.appendChild(foodNameHeading);
+    const foodNameHeading = document.createElement('h2');
+    foodNameHeading.textContent = food['Food Name'];
+    foodDetailsDiv.appendChild(foodNameHeading);
 
-        // Define nutrient groups. Ensure these match the exact keys from your food_data.json
-        const nutrientGroups = {
-            'Macros & Energy (per 100g)': [
-                'Energy (kcal)', 'Protein (g)', 'Total lipid (fat) (g)',
-                'Carbohydrate, by difference (g)', 'Fiber, total dietary (g)', 'Sugars, total (g)',
-                'Water (g)'
-            ],
-            'Vitamins (per 100g)': [
-                'Vitamin A, RAE (mcg)', 'Vitamin D (D2 + D3) (mcg)', 'Vitamin E (alpha-tocopherol) (mg)',
-                'Vitamin K (phylloquinone) (mcg)', 'Vitamin C, total ascorbic acid (mg)', 'Thiamin (mg)',
-                'Riboflavin (mg)', 'Niacin (mg)', 'Vitamin B-6 (mg)', 'Folate, DFE (mcg)',
-                'Vitamin B-12 (mcg)'
-            ],
-            'Minerals (per 100g)': [
-                'Calcium, Ca (mg)', 'Iron, Fe (mg)', 'Magnesium, Mg (mg)', 'Phosphorus, P (mg)',
-                'Potassium, K (mg)', 'Sodium, Na (mg)', 'Zinc, Zn (mg)', 'Copper, Cu (mg)',
-                'Manganese, Mn (mg)', 'Selenium, Se (mcg)'
-            ],
-            'Other (per 100g)': [ // Add other specific nutrients if you have them and want to display them here
-                'Cholesterol (mg)'
-            ]
-        };
+    // Define nutrient groups. Ensure these match the exact keys from your food_data.json
+    const nutrientGroups = {
+        'Macros & Energy (per 100g)': [
+            'Energy (kcal)', 'Protein (g)', 'Total lipid (fat) (g)',
+            'Carbohydrate, by difference (g)', 'Fiber, total dietary (g)', 'Sugars, total (g)',
+            'Water (g)'
+        ],
+        'Vitamins (per 100g)': [
+            'Vitamin A, RAE (mcg)', 'Vitamin D (D2 + D3) (mcg)', 'Vitamin E (alpha-tocopherol) (mg)',
+            'Vitamin K (phylloquinone) (mcg)', 'Vitamin C, total ascorbic acid (mg)', 'Thiamin (mg)',
+            'Riboflavin (mg)', 'Niacin (mg)', 'Vitamin B-6 (mg)', 'Folate, DFE (mcg)',
+            'Vitamin B-12 (mcg)'
+        ],
+        'Minerals (per 100g)': [
+            'Calcium, Ca (mg)', 'Iron, Fe (mg)', 'Magnesium, Mg (mg)', 'Phosphorus, P (mg)',
+            'Potassium, K (mg)', 'Sodium, Na (mg)', 'Zinc, Zn (mg)', 'Copper, Cu (mg)',
+            'Manganese, Mn (mg)', 'Selenium, Se (mcg)'
+        ],
+        'Other (per 100g)': [ // Add other specific nutrients if you have them and want to display them here
+            'Cholesterol (mg)'
+        ]
+    };
 
-        // Iterate through each group and create a section for it
-        for (const groupName in nutrientGroups) {
-            if (nutrientGroups.hasOwnProperty(groupName)) {
-                const groupSection = document.createElement('div');
-                groupSection.className = 'nutrient-group'; // For CSS styling
+    // Iterate through each group and create a section for it
+    for (const groupName in nutrientGroups) {
+        if (nutrientGroups.hasOwnProperty(groupName)) {
+            const groupSection = document.createElement('div');
+            groupSection.className = 'nutrient-group'; // For CSS styling
 
-                const groupHeading = document.createElement('h3');
-                groupHeading.textContent = groupName;
-                groupSection.appendChild(groupHeading);
+            const groupHeading = document.createElement('h3');
+            groupHeading.textContent = groupName;
+            groupSection.appendChild(groupHeading);
 
-                const groupList = document.createElement('ul');
-                groupList.className = 'nutrient-list'; // For CSS styling
+            const groupList = document.createElement('ul');
+            groupList.className = 'nutrient-list'; // For CSS styling
 
-                nutrientGroups[groupName].forEach(nutrientKey => {
-                    // Check if the nutrient key exists in the food object
-                    if (food.hasOwnProperty(nutrientKey)) {
-                        const listItem = document.createElement('li');
-                        const value = food[nutrientKey];
+            nutrientGroups[groupName].forEach(nutrientKey => {
+                // Check if the nutrient key exists in the food object
+                if (food.hasOwnProperty(nutrientKey)) {
+                    const listItem = document.createElement('li');
+                    const value = food[nutrientKey];
 
-                        // Format numeric values to 2 decimal places, keep 'N/A' as is
-                        const displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : value;
+                    // Format numeric values to 2 decimal places, keep 'N/A' as is
+                    const displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : value;
 
-                        // Remove unit from key for cleaner display (e.g., "Protein (g)" becomes "Protein")
-                        const cleanNutrientName = nutrientKey.replace(/\s*\(.*\)\s*$/, ''); // Removes (unit) at end
+                    // Remove unit from key for cleaner display (e.g., "Protein (g)" becomes "Protein")
+                    const cleanNutrientName = nutrientKey.replace(/\s*\(.*\)\s*$/, ''); // Removes (unit) at end
 
-                        listItem.innerHTML = `<strong>${cleanNutrientName}:</strong> ${displayValue}`;
-                        groupList.appendChild(listItem);
-                    }
-                });
-                groupSection.appendChild(groupList);
-                detailsDiv.appendChild(groupSection);
-            }
+                    listItem.innerHTML = `<strong>${cleanNutrientName}:</strong> ${displayValue}`;
+                    groupList.appendChild(listItem);
+                }
+            });
+            groupSection.appendChild(groupList);
+            foodDetailsDiv.appendChild(groupSection); // Append to foodDetailsDiv, not detailsDiv
         }
     }
+}
 
     // --- Download JSON functionality ---
     downloadJsonButton.addEventListener('click', () => {
