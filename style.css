@@ -439,3 +439,25 @@ hr {
         max-width: none; /* Remove max-width restriction */
     }
 }
+
+/* style.css */
+
+.table-measurement-info {
+    margin-left: 20px; /* Give some space from the dropdown */
+    font-size: 0.9em; /* Slightly smaller text */
+    color: #666; /* A bit lighter color */
+    background-color: #eef; /* A very subtle background */
+    padding: 5px 10px; /* Some padding around the text */
+    border-radius: 5px; /* Slightly rounded corners */
+    border: 1px solid #ddd; /* A light border */
+}
+
+/* Adjust for smaller screens if needed */
+@media (max-width: 768px) {
+    .table-measurement-info {
+        display: block; /* Make it stack on its own line */
+        margin-left: 0; /* Remove left margin */
+        margin-top: 10px; /* Add some space from elements above */
+        text-align: center; /* Center the text */
+    }
+}
