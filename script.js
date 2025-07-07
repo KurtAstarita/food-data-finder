@@ -43,6 +43,11 @@ let foodData = []; // Stores the entire dataset from food_data.json
 let currentPage = 1; // Current page for the main food table
 let itemsPerPage; // Number of items to display per page in the table, set on load
 let currentFoodDetails = null; // Stores the food object currently being displayed in the details section
+// ... (existing global variables) ...
+let currentFoodDetails = null;
+// New global variables for sorting
+let currentSortColumn = 'Food Name'; // Default sort column
+let currentSortDirection = 'asc'; // Default sort direction
 
 // 2. --- Asynchronous Data Loading Function ---
 // Fetches food data from the 'food_data.json' file.
@@ -70,6 +75,19 @@ async function loadFoodData() {
     }
 }
 
+function handleHeaderClick(column) {
+    if (currentSortColumn === column) {
+        // If same column, toggle direction
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        // If different column, set new column and default to ascending
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+    currentPage = 1; // Reset to the first page when sort order changes
+    renderTable(); // Re-render the table with the new sort order
+}
+
 function renderTable() {
     const tableBody = document.getElementById('tableBody');
     const tableHeader = document.getElementById('tableHeader');
@@ -77,22 +95,16 @@ function renderTable() {
     const prevPageButton = document.getElementById('prevPage');
     const nextPageButton = document.getElementById('nextPage');
 
-    tableBody.innerHTML = ''; // Clear existing table rows.
-    tableHeader.innerHTML = ''; // Clear existing table headers.
+    tableBody.innerHTML = '';
+    tableHeader.innerHTML = '';
 
-    // If no food data is loaded, display a fallback message.
     if (foodData.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="100">No data to display.</td></tr>';
         return;
     }
 
-    // Define columns to display in the main table.
-    // 'Food Name' is always included. Other nutrients are based on 'per 100g' keys.
-    const sampleFood = foodData[0]; // Use the first food item to determine available columns.
-    
-    // *** CHANGE THIS LINE ***
-    const primaryCols = ['Food Name']; // Changed from 'Food Name'
-    
+    const sampleFood = foodData[0];
+    const primaryCols = ['Food Name'];
     const nutrientColsForTable = [
         "Calories (per 100g)",
         "Protein (per 100g)",
@@ -101,8 +113,7 @@ function renderTable() {
         "Fiber dietary (per 100g)",
         "Sodium (per 100g)"
     ];
-       
-    // Build the final list of columns to display, checking if they exist in the data.
+        
     const displayColumns = [...primaryCols];
     nutrientColsForTable.forEach(col => {
         if (sampleFood.hasOwnProperty(col)) {
@@ -110,28 +121,74 @@ function renderTable() {
         }
     });
 
-    // Create table headers dynamically.
+    // Create table headers dynamically with sorting capabilities
     displayColumns.forEach(col => {
         const th = document.createElement('th');
         // Use .textContent for safety, and remove units from header text for cleaner display.
-        // This regex will now correctly keep "per 100g" for the food item column.
-        th.textContent = col.replace(/\s*\(.*\)\s*$/, ''); 
+        th.textContent = col.replace(/\s*\(.*\)\s*$/, '');
+        
+        // Add a data attribute to store the original column key for sorting
+        th.setAttribute('data-column', col);
+        th.classList.add('sortable'); // Add a class for styling sortable headers
+
+        // Add sort indicator if this is the currently sorted column
+        if (currentSortColumn === col) {
+            const arrow = document.createElement('span');
+            arrow.classList.add('sort-arrow');
+            arrow.innerHTML = currentSortDirection === 'asc' ? ' &#9650;' : ' &#9660;'; // Up arrow or Down arrow
+            th.appendChild(arrow);
+        }
+
+        // Add click listener for sorting
+        th.addEventListener('click', () => {
+            handleHeaderClick(col); // Call the new handler function
+        });
+        
         tableHeader.appendChild(th);
     });
 
-    // Add a "View Details" column header.
+    // Add a "View Details" column header (not sortable)
     const thDetails = document.createElement('th');
     thDetails.textContent = 'Details';
     tableHeader.appendChild(thDetails);
 
-    // Calculate pagination details.
-    const totalPages = Math.ceil(foodData.length / itemsPerPage);
-    // Ensure currentPage is within valid bounds.
+    // --- IMPORTANT: Apply Sorting Before Pagination ---
+    // Create a copy of foodData and sort it based on currentSortColumn and currentSortDirection
+    const sortedFoodData = [...foodData].sort((a, b) => {
+        const valA = a[currentSortColumn];
+        const valB = b[currentSortColumn];
+
+        // Handle numeric columns
+        if (nutrientColsForTable.includes(currentSortColumn)) {
+            const numA = typeof valA === 'number' && !isNaN(valA) ? valA : -Infinity; // Treat N/A as very small for sorting
+            const numB = typeof valB === 'number' && !isNaN(valB) ? valB : -Infinity;
+
+            if (currentSortDirection === 'asc') {
+                return numA - numB;
+            } else {
+                return numB - numA;
+            }
+        }
+        // Handle string columns (like 'Food Name')
+        else if (currentSortColumn === 'Food Name') {
+            const strA = (valA || '').toLowerCase();
+            const strB = (valB || '').toLowerCase();
+            if (currentSortDirection === 'asc') {
+                return strA.localeCompare(strB);
+            } else {
+                return strB.localeCompare(strA);
+            }
+        }
+        return 0; // Should not happen if currentSortColumn is always valid
+    });
+
+    // Calculate pagination details based on the SORTED data.
+    const totalPages = Math.ceil(sortedFoodData.length / itemsPerPage);
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
 
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, foodData.length);
-    const foodsToDisplay = foodData.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + itemsPerPage, sortedFoodData.length);
+    const foodsToDisplay = sortedFoodData.slice(startIndex, endIndex); // Slice from sorted data
 
     // Populate the table body with food data.
     foodsToDisplay.forEach(food => {
@@ -139,18 +196,15 @@ function renderTable() {
         displayColumns.forEach(col => {
             const td = document.createElement('td');
             const value = food[col];
-            // Format numeric values to 2 decimal places, display 'N/A' for missing/invalid data.
             td.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
             tr.appendChild(td);
         });
 
-        // Add a "View Details" button for each food item.
         const tdDetails = document.createElement('td');
         const detailButton = document.createElement('button');
         detailButton.textContent = 'View';
-        detailButton.classList.add('detail-button'); // Add class for styling.
+        detailButton.classList.add('detail-button');
         detailButton.addEventListener('click', () => {
-            // Clear search results, display food details, and scroll to the details section.
             document.getElementById('searchResults').innerHTML = '';
             displayFoodDetails(food);
             document.getElementById('foodDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -161,10 +215,9 @@ function renderTable() {
         tableBody.appendChild(tr);
     });
 
-    // Update pagination information displayed on the page.
     pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
-    prevPageButton.disabled = currentPage === 1; // Disable 'Previous' button on first page.
-    nextPageButton.disabled = currentPage === totalPages; // Disable 'Next' button on last page.
+    prevPageButton.disabled = currentPage === 1;
+    nextPageButton.disabled = currentPage === totalPages;
 }
 
 
