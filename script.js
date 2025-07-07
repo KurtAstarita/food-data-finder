@@ -160,8 +160,8 @@ function renderTable() {
         // Handle numeric columns (including estimated calories in the table)
         if (nutrientColsForTable.includes(currentSortColumn)) {
             // Parse to float, default to negative infinity for N/A for ascending sort
-            const numA = typeof valA === 'number' && !isNaN(valA) ? valA : parseFloat(valA) || -Infinity;
-            const numB = typeof valB === 'number' && !isNaN(valB) ? valB : parseFloat(valB) || -Infinity;
+            const numA = parseFloat(valA) || -Infinity;
+            const numB = parseFloat(valB) || -Infinity;
 
             if (currentSortDirection === 'asc') {
                 return numA - numB;
@@ -228,8 +228,16 @@ function renderTable() {
             } else {
                 // General handling for other columns
                 const value = food[col];
-                // MODIFIED: Use parseFloat for other numeric columns too
-                displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (typeof value === 'string' && !isNaN(parseFloat(value))) ? parseFloat(value).toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
+                // MODIFIED: This is the crucial line for search table display
+                // If it's a number OR a string that can be parsed to a number, format it.
+                // Otherwise, display the value as is or 'N/A'.
+                if ((typeof value === 'number' && !isNaN(value)) || (typeof value === 'string' && !isNaN(parseFloat(value)))) {
+                    displayValue = parseFloat(value).toFixed(2);
+                } else if (value !== undefined && value !== null && value !== '') {
+                    displayValue = value;
+                } else {
+                    displayValue = 'N/A';
+                }
             }
 
             td.textContent = displayValue;
@@ -471,7 +479,7 @@ function displayFoodDetails(food) {
 
     reconnectedUnitSelect.addEventListener('change', () => {
         if (currentFoodDetails) {
-            updateNutrientDetailsDisplay(currentFoodDetails, 
+            updateNutientDetailsDisplay(currentFoodDetails, 
                                          parseFloat(reconnectedQuantityInput.value), 
                                          reconnectedUnitSelect.value);
         }
