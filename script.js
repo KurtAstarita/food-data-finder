@@ -70,8 +70,6 @@ async function loadFoodData() {
     }
 }
 
-// --- Table Rendering and Pagination Functions ---
-// Renders the main table of food items based on current page and items per page.
 function renderTable() {
     const tableBody = document.getElementById('tableBody');
     const tableHeader = document.getElementById('tableHeader');
@@ -91,7 +89,10 @@ function renderTable() {
     // Define columns to display in the main table.
     // 'Food Name' is always included. Other nutrients are based on 'per 100g' keys.
     const sampleFood = foodData[0]; // Use the first food item to determine available columns.
-    const primaryCols = ['Food Item per 100g'];
+    
+    // *** CHANGE THIS LINE ***
+    const primaryCols = ['Food Item per 100g']; // Changed from 'Food Name'
+    
     const nutrientColsForTable = [
         "Calories (per 100g)",
         "Protein (per 100g)",
@@ -113,7 +114,8 @@ function renderTable() {
     displayColumns.forEach(col => {
         const th = document.createElement('th');
         // Use .textContent for safety, and remove units from header text for cleaner display.
-        th.textContent = col.replace(/\s*\(.*\)\s*$/, '');
+        // This regex will now correctly keep "per 100g" for the food item column.
+        th.textContent = col.replace(/\s*\(.*\)\s*$/, ''); 
         tableHeader.appendChild(th);
     });
 
