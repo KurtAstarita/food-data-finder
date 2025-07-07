@@ -247,23 +247,26 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
         groupList.className = 'nutrient-list';
 
         // Iterate through each specific nutrient within the category (e.g., "Energy", "Protein").
-        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
+       for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
             const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
             
             let baseValue = 0; // Stores the raw nutrient value from the JSON.
             let calculatedValue = 'N/A'; // Stores the calculated value for the given quantity/unit.
-            let displayUnit = ''; // Stores the unit to display (g, oz).
+            
+            // 1. *** IMPORTANT CHANGE HERE ***
+            // Get the intrinsic displayUnit directly from the nutrientMapping
+            let displayUnit = nutrientMapping.displayUnit || ''; 
 
             // Determine which key to use from the food data based on the selected unit
             // and perform the calculation.
             if (unit === 'gram' && nutrientMapping['gram'] && typeof food[nutrientMapping['gram']] === 'number') {
                 baseValue = food[nutrientMapping['gram']];
                 calculatedValue = baseValue * quantity;
-                displayUnit = 'g';
+                // Removed: displayUnit = 'g';  <-- This line is no longer needed here
             } else if (unit === 'ounce' && nutrientMapping['ounce'] && typeof food[nutrientMapping['ounce']] === 'number') {
                 baseValue = food[nutrientMapping['ounce']];
                 calculatedValue = baseValue * quantity;
-                displayUnit = 'oz';
+                // Removed: displayUnit = 'oz'; <-- This line is no longer needed here
             }
             // If the specific unit key is not found or its value is not a number,
             // calculatedValue remains 'N/A'. The '100g' option is no longer handled here.
@@ -275,7 +278,9 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
             const listItem = document.createElement('li');
             const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
             const sanitizedFormattedDisplayValue = DOMPurify.sanitize(formattedDisplayValue.toString());
-            const sanitizedDisplayUnit = DOMPurify.sanitize(displayUnit);
+            // 2. *** IMPORTANT CHANGE HERE ***
+            // Ensure you use the displayUnit variable that was set from nutrientMapping
+            const sanitizedDisplayUnit = DOMPurify.sanitize(displayUnit); 
 
             listItem.innerHTML = `<strong>${sanitizedDisplayName}:</strong> ${sanitizedFormattedDisplayValue}${sanitizedDisplayUnit ? ` ${sanitizedDisplayUnit}` : ''}`;
             groupList.appendChild(listItem);
