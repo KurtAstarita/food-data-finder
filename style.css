@@ -461,3 +461,24 @@ hr {
         text-align: center; /* Center the text */
     }
 }
+
+/* style.css */
+
+.sortable {
+    cursor: pointer;
+    position: relative; /* Needed for absolute positioning of arrow if desired */
+    padding-right: 20px; /* Make space for arrow */
+}
+
+.sortable:hover {
+    background-color: #f0f0f0; /* Light highlight on hover */
+}
+
+.sort-arrow {
+    position: absolute;
+    right: 5px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em; /* Smaller arrow */
+    color: #555; /* Subtle color */
+}
