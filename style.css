@@ -360,3 +360,82 @@ hr {
         flex-grow: 1; /* Allow buttons/select to grow */
     }
 }
+
+/* General styling for the container of the quantity input and unit select */
+.quantity-input-group {
+    display: flex; /* Makes the label, input, and select sit nicely in a row */
+    align-items: center; /* Vertically aligns items in the middle */
+    gap: 10px; /* Adds space between the items */
+    margin-bottom: 20px; /* Space below the entire group */
+    background-color: #f9f9f9; /* Light background for the bar */
+    padding: 15px; /* Padding inside the bar */
+    border-radius: 8px; /* Slightly rounded corners */
+    border: 1px solid #e0e0e0; /* Light border */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow for depth */
+}
+
+/* Styling for the label */
+.quantity-input-group label {
+    font-weight: bold; /* Make the label stand out */
+    color: #333; /* Darker text color */
+    flex-shrink: 0; /* Prevent the label from shrinking */
+}
+
+/* Styling for the number input field */
+.quantity-input-group input[type="number"] {
+    flex-grow: 1; /* Allows the input field to take up available space */
+    padding: 10px 12px; /* Comfortable padding */
+    border: 1px solid #ccc; /* Standard border */
+    border-radius: 5px; /* Rounded input corners */
+    font-size: 1rem; /* Readable font size */
+    width: 100px; /* A good default width, flex-grow will expand it if needed */
+    max-width: 150px; /* Prevent it from becoming too wide */
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+}
+
+/* Styling for the dropdown unit selector */
+.quantity-input-group select {
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    background-color: #fff; /* White background for the dropdown */
+    cursor: pointer; /* Indicate it's clickable */
+    /* Remove default dropdown arrow (optional, but often preferred for custom styling) */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.973L146.2%2C57.173L5.4%2C197.973H287z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow */
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 12px;
+    padding-right: 30px; /* Make space for the custom arrow */
+}
+
+/* Focus styles for accessibility and user feedback */
+.quantity-input-group input[type="number"]:focus,
+.quantity-input-group select:focus {
+    border-color: #007bff; /* Highlight border on focus */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+    outline: none; /* Remove default outline */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    .quantity-input-group {
+        flex-direction: column; /* Stack items vertically on small screens */
+        align-items: stretch; /* Stretch items to full width */
+        padding: 10px; /* Reduce padding */
+    }
+
+    .quantity-input-group label {
+        margin-bottom: 5px; /* Space between label and input when stacked */
+        text-align: center;
+    }
+
+    .quantity-input-group input[type="number"],
+    .quantity-input-group select {
+        width: 100%; /* Full width */
+        max-width: none; /* Remove max-width restriction */
+    }
+}
