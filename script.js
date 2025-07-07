@@ -79,6 +79,7 @@ function handleHeaderClick(column) {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
     } else {
         // If different column, set new column and default to ascending
+        // Make sure "Food Name" is handled as a string comparison, others as numeric
         currentSortColumn = column;
         currentSortDirection = 'asc';
     }
@@ -156,10 +157,11 @@ function renderTable() {
         const valA = a[currentSortColumn];
         const valB = b[currentSortColumn];
 
-        // Handle numeric columns
+        // Handle numeric columns (including estimated calories in the table)
         if (nutrientColsForTable.includes(currentSortColumn)) {
-            const numA = typeof valA === 'number' && !isNaN(valA) ? valA : -Infinity; // Treat N/A as very small for sorting
-            const numB = typeof valB === 'number' && !isNaN(valB) ? valB : -Infinity;
+            // Parse to float, default to negative infinity for N/A for ascending sort
+            const numA = typeof valA === 'number' && !isNaN(valA) ? valA : parseFloat(valA) || -Infinity;
+            const numB = typeof valB === 'number' && !isNaN(valB) ? valB : parseFloat(valB) || -Infinity;
 
             if (currentSortDirection === 'asc') {
                 return numA - numB;
@@ -199,16 +201,18 @@ function renderTable() {
             if (col === "Calories (per 100g)") {
                 const originalValue = food[col];
                 // Check if original value is missing or invalid (e.g., "N/A" or undefined)
-                if (typeof originalValue !== 'number' || isNaN(originalValue)) {
+                // MODIFIED: Use parseFloat on the originalValue to handle numeric strings
+                if (typeof originalValue !== 'number' || isNaN(parseFloat(originalValue))) { 
                     // Get 100g values for macros using the nutrientGroups mapping
                     const proteinKey = nutrientGroups.Macros.Protein["100g"];
                     const fatKey = nutrientGroups.Macros.Fat["100g"];
                     const carbsKey = nutrientGroups.Macros.Carbohydrates["100g"];
 
                     // Retrieve macro values, defaulting to 0 if N/A or invalid
-                    const proteinVal = typeof food[proteinKey] === 'number' && !isNaN(food[proteinKey]) ? food[proteinKey] : 0;
-                    const fatVal = typeof food[fatKey] === 'number' && !isNaN(food[fatKey]) ? food[fatKey] : 0;
-                    const carbsVal = typeof food[carbsKey] === 'number' && !isNaN(food[carbsKey]) ? food[carbsKey] : 0;
+                    // MODIFIED: Use parseFloat here for all macro values
+                    const proteinVal = parseFloat(food[proteinKey]) || 0; 
+                    const fatVal = parseFloat(food[fatKey]) || 0;         
+                    const carbsVal = parseFloat(food[carbsKey]) || 0; 
 
                     // Only estimate if at least one macronutrient is available
                     if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
@@ -219,12 +223,13 @@ function renderTable() {
                         displayValue = 'N/A'; // Still N/A if macros are also missing
                     }
                 } else {
-                    displayValue = originalValue.toFixed(2); // Use original value if valid
+                    displayValue = parseFloat(originalValue).toFixed(2); // Use original value if valid, ensure it's parsed
                 }
             } else {
                 // General handling for other columns
                 const value = food[col];
-                displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
+                // MODIFIED: Use parseFloat for other numeric columns too
+                displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (typeof value === 'string' && !isNaN(parseFloat(value))) ? parseFloat(value).toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
             }
 
             td.textContent = displayValue;
@@ -354,11 +359,12 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
             let isEstimated = false; // Flag to indicate if calories were estimated
 
             // Determine which key to use from the food data based on the selected unit
-            if (unit === 'gram' && nutrientMapping['gram'] && typeof food[nutrientMapping['gram']] === 'number') {
-                baseValue = food[nutrientMapping['gram']];
+            // MODIFIED: Use parseFloat here for all base values from food data
+            if (unit === 'gram' && nutrientMapping['gram']) { 
+                baseValue = parseFloat(food[nutrientMapping['gram']]) || 0; 
                 calculatedValue = baseValue * quantity;
-            } else if (unit === 'ounce' && nutrientMapping['ounce'] && typeof food[nutrientMapping['ounce']] === 'number') {
-                baseValue = food[nutrientMapping['ounce']];
+            } else if (unit === 'ounce' && nutrientMapping['ounce']) { 
+                baseValue = parseFloat(food[nutrientMapping['ounce']]) || 0; 
                 calculatedValue = baseValue * quantity;
             }
 
@@ -369,9 +375,10 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
                 const fatKey = nutrientGroups.Macros.Fat[unit];
                 const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
 
-                const proteinVal = typeof food[proteinKey] === 'number' && !isNaN(food[proteinKey]) ? food[proteinKey] : 0;
-                const fatVal = typeof food[fatKey] === 'number' && !isNaN(food[fatKey]) ? food[fatKey] : 0;
-                const carbsVal = typeof food[carbsKey] === 'number' && !isNaN(food[carbsKey]) ? food[carbsKey] : 0;
+                // MODIFIED: Apply parseFloat here for macro values from food data
+                const proteinVal = parseFloat(food[proteinKey]) || 0; 
+                const fatVal = parseFloat(food[fatKey]) || 0;         
+                const carbsVal = parseFloat(food[carbsKey]) || 0;     
 
                 // Only estimate if at least one macronutrient is available
                 if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
