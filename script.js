@@ -42,8 +42,6 @@ const nutrientGroups = {
 let foodData = []; // Stores the entire dataset from food_data.json
 let currentPage = 1; // Current page for the main food table
 let itemsPerPage; // Number of items to display per page in the table, set on load
-let currentFoodDetails = null; // Stores the food object currently being displayed in the details section
-// ... (existing global variables) ...
 let currentFoodDetails = null;
 // New global variables for sorting
 let currentSortColumn = 'Food Name'; // Default sort column
