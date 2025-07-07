@@ -282,7 +282,22 @@ function displaySearchResults(query) {
     }
 }
 
-const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+/**
+ * Renders or re-renders the nutrient details based on the current food, quantity, and unit.
+ * This function performs the actual calculation and display of individual nutrients.
+ * @param {Object} food - The food item object.
+ * @param {number} quantity - The user-specified quantity.
+ * @param {string} unit - The selected unit ('gram', 'ounce').
+ */
+function updateNutrientDetailsDisplay(food, quantity, unit) {
+    const nutrientDetailsDisplay = document.getElementById('nutrientDetailsDisplay');
+    nutrientDetailsDisplay.innerHTML = ''; // Clear previous details before re-rendering.
+
+    // Ensure quantity is a valid positive number, default to 1 if invalid or zero.
+    quantity = parseFloat(quantity);
+    if (isNaN(quantity) || quantity <= 0) {
+        quantity = 1;
+    }
 
     // Iterate through each main nutrient category (Macros, Minerals, Vitamins).
     for (const groupCategory in nutrientGroups) {
@@ -297,29 +312,43 @@ const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
         groupList.className = 'nutrient-list';
 
         // Iterate through each specific nutrient within the category (e.g., "Energy", "Protein").
-       for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
+        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
             const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
             
             let baseValue = 0; // Stores the raw nutrient value from the JSON.
             let calculatedValue = 'N/A'; // Stores the calculated value for the given quantity/unit.
-            
-            // 1. *** IMPORTANT CHANGE HERE ***
-            // Get the intrinsic displayUnit directly from the nutrientMapping
-            let displayUnit = nutrientMapping.displayUnit || ''; 
+            let displayUnit = nutrientMapping.displayUnit || ''; // Get intrinsic displayUnit
+            let isEstimated = false; // Flag to indicate if calories were estimated
 
             // Determine which key to use from the food data based on the selected unit
-            // and perform the calculation.
             if (unit === 'gram' && nutrientMapping['gram'] && typeof food[nutrientMapping['gram']] === 'number') {
                 baseValue = food[nutrientMapping['gram']];
                 calculatedValue = baseValue * quantity;
-                // Removed: displayUnit = 'g';  <-- This line is no longer needed here
             } else if (unit === 'ounce' && nutrientMapping['ounce'] && typeof food[nutrientMapping['ounce']] === 'number') {
                 baseValue = food[nutrientMapping['ounce']];
                 calculatedValue = baseValue * quantity;
-                // Removed: displayUnit = 'oz'; <-- This line is no longer needed here
             }
-            // If the specific unit key is not found or its value is not a number,
-            // calculatedValue remains 'N/A'. The '100g' option is no longer handled here.
+
+            // --- LOGIC FOR CALORIES ESTIMATION ---
+            // This is where the calculation happens, safely inside the function
+            if (nutrientDisplayName === "Calories" && (calculatedValue === 'N/A' || isNaN(calculatedValue))) {
+                const proteinKey = nutrientGroups.Macros.Protein[unit];
+                const fatKey = nutrientGroups.Macros.Fat[unit];
+                const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
+
+                const proteinVal = typeof food[proteinKey] === 'number' && !isNaN(food[proteinKey]) ? food[proteinKey] : 0;
+                const fatVal = typeof food[fatKey] === 'number' && !isNaN(food[fatKey]) ? food[fatKey] : 0;
+                const carbsVal = typeof food[carbsKey] === 'number' && !isNaN(food[carbsKey]) ? food[carbsKey] : 0;
+
+                // Only estimate if at least one macronutrient is available
+                if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
+                    const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+                    calculatedValue = estimatedBaseCalories * quantity;
+                    isEstimated = true;
+                    displayUnit = 'kcal'; // Ensure unit is kcal for estimated calories
+                }
+            }
+            // --- END LOGIC FOR CALORIES ESTIMATION ---
 
             // Format the calculated value to 2 decimal places or 'N/A'.
             const formattedDisplayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
@@ -328,11 +357,14 @@ const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
             const listItem = document.createElement('li');
             const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
             const sanitizedFormattedDisplayValue = DOMPurify.sanitize(formattedDisplayValue.toString());
-            // 2. *** IMPORTANT CHANGE HERE ***
-            // Ensure you use the displayUnit variable that was set from nutrientMapping
-            const sanitizedDisplayUnit = DOMPurify.sanitize(displayUnit); 
+            const sanitizedDisplayUnit = DOMPurify.sanitize(displayUnit);
 
-            listItem.innerHTML = `<strong>${sanitizedDisplayName}:</strong> ${sanitizedFormattedDisplayValue}${sanitizedDisplayUnit ? ` ${sanitizedDisplayUnit}` : ''}`;
+            let displayLabel = sanitizedDisplayName;
+            if (isEstimated) {
+                displayLabel += ' (Estimated)'; // Add ' (Estimated)' to the label for clarity
+            }
+
+            listItem.innerHTML = `<strong>${displayLabel}:</strong> ${sanitizedFormattedDisplayValue}${sanitizedDisplayUnit ? ` ${sanitizedDisplayUnit}` : ''}`;
             groupList.appendChild(listItem);
         }
         groupSection.appendChild(groupList);
