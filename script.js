@@ -193,8 +193,41 @@ function renderTable() {
         const tr = document.createElement('tr');
         displayColumns.forEach(col => {
             const td = document.createElement('td');
-            const value = food[col];
-            td.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
+            let displayValue; // Variable to hold the final value for display
+
+            // --- NEW: Special handling for Calories (per 100g) to include estimation ---
+            if (col === "Calories (per 100g)") {
+                const originalValue = food[col];
+                // Check if original value is missing or invalid
+                if (typeof originalValue !== 'number' || isNaN(originalValue)) {
+                    // Get 100g values for macros using the nutrientGroups mapping
+                    const proteinKey = nutrientGroups.Macros.Protein["100g"];
+                    const fatKey = nutrientGroups.Macros.Fat["100g"];
+                    const carbsKey = nutrientGroups.Macros.Carbohydrates["100g"];
+
+                    // Retrieve macro values, defaulting to 0 if N/A
+                    const proteinVal = typeof food[proteinKey] === 'number' && !isNaN(food[proteinKey]) ? food[proteinKey] : 0;
+                    const fatVal = typeof food[fatKey] === 'number' && !isNaN(food[fatKey]) ? food[fatKey] : 0;
+                    const carbsVal = typeof food[carbsKey] === 'number' && !isNaN(food[carbsKey]) ? food[carbsKey] : 0;
+
+                    // Only estimate if at least one macronutrient is available
+                    if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
+                        const estimatedCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+                        displayValue = estimatedCalories.toFixed(2) + ' (Est.)';
+                        td.classList.add('estimated-value'); // Optional: Add a class for styling estimated values
+                    } else {
+                        displayValue = 'N/A'; // Still N/A if macros are also missing
+                    }
+                } else {
+                    displayValue = originalValue.toFixed(2); // Use original value if valid
+                }
+            } else {
+                // General handling for other columns
+                const value = food[col];
+                displayValue = (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : (value !== undefined && value !== null && value !== '') ? value : 'N/A';
+            }
+
+            td.textContent = displayValue;
             tr.appendChild(td);
         });
 
