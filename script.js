@@ -91,7 +91,7 @@ function renderTable() {
     // Define columns to display in the main table.
     // 'Food Name' is always included. Other nutrients are based on 'per 100g' keys.
     const sampleFood = foodData[0]; // Use the first food item to determine available columns.
-    const primaryCols = ['Food Name'];
+    const primaryCols = ['Food Item per 100g'];
     const nutrientColsForTable = [
         "Calories (per 100g)",
         "Protein (per 100g)",
