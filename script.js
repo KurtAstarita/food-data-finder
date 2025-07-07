@@ -198,14 +198,14 @@ function renderTable() {
             // --- NEW: Special handling for Calories (per 100g) to include estimation ---
             if (col === "Calories (per 100g)") {
                 const originalValue = food[col];
-                // Check if original value is missing or invalid
+                // Check if original value is missing or invalid (e.g., "N/A" or undefined)
                 if (typeof originalValue !== 'number' || isNaN(originalValue)) {
                     // Get 100g values for macros using the nutrientGroups mapping
                     const proteinKey = nutrientGroups.Macros.Protein["100g"];
                     const fatKey = nutrientGroups.Macros.Fat["100g"];
                     const carbsKey = nutrientGroups.Macros.Carbohydrates["100g"];
 
-                    // Retrieve macro values, defaulting to 0 if N/A
+                    // Retrieve macro values, defaulting to 0 if N/A or invalid
                     const proteinVal = typeof food[proteinKey] === 'number' && !isNaN(food[proteinKey]) ? food[proteinKey] : 0;
                     const fatVal = typeof food[fatKey] === 'number' && !isNaN(food[fatKey]) ? food[fatKey] : 0;
                     const carbsVal = typeof food[carbsKey] === 'number' && !isNaN(food[carbsKey]) ? food[carbsKey] : 0;
