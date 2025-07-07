@@ -282,22 +282,7 @@ function displaySearchResults(query) {
     }
 }
 
-/**
- * Renders or re-renders the nutrient details based on the current food, quantity, and unit.
- * This function performs the actual calculation and display of individual nutrients.
- * @param {Object} food - The food item object.
- * @param {number} quantity - The user-specified quantity.
- * @param {string} unit - The selected unit ('gram', 'ounce').
- */
-function updateNutrientDetailsDisplay(food, quantity, unit) {
-    const nutrientDetailsDisplay = document.getElementById('nutrientDetailsDisplay');
-    nutrientDetailsDisplay.innerHTML = ''; // Clear previous details before re-rendering.
-
-    // Ensure quantity is a valid positive number, default to 1 if invalid or zero.
-    quantity = parseFloat(quantity);
-    if (isNaN(quantity) || quantity <= 0) {
-        quantity = 1;
-    }
+const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
 
     // Iterate through each main nutrient category (Macros, Minerals, Vitamins).
     for (const groupCategory in nutrientGroups) {
