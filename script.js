@@ -201,7 +201,6 @@ function renderTable() {
             if (col === "Calories (per 100g)") {
                 const originalValue = food[col];
                 // Check if original value is missing or invalid (e.g., "N/A" or undefined)
-                // MODIFIED: Use parseFloat on the originalValue to handle numeric strings
                 if (typeof originalValue !== 'number' || isNaN(parseFloat(originalValue))) { 
                     // Get 100g values for macros using the nutrientGroups mapping
                     const proteinKey = nutrientGroups.Macros.Protein["100g"];
@@ -209,7 +208,6 @@ function renderTable() {
                     const carbsKey = nutrientGroups.Macros.Carbohydrates["100g"];
 
                     // Retrieve macro values, defaulting to 0 if N/A or invalid
-                    // MODIFIED: Use parseFloat here for all macro values
                     const proteinVal = parseFloat(food[proteinKey]) || 0; 
                     const fatVal = parseFloat(food[fatKey]) || 0;         
                     const carbsVal = parseFloat(food[carbsKey]) || 0; 
@@ -228,7 +226,6 @@ function renderTable() {
             } else {
                 // General handling for other columns
                 const value = food[col];
-                // MODIFIED: This is the crucial line for search table display
                 // If it's a number OR a string that can be parsed to a number, format it.
                 // Otherwise, display the value as is or 'N/A'.
                 if ((typeof value === 'number' && !isNaN(value)) || (typeof value === 'string' && !isNaN(parseFloat(value)))) {
@@ -367,33 +364,47 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
             let isEstimated = false; // Flag to indicate if calories were estimated
 
             // Determine which key to use from the food data based on the selected unit
-            // MODIFIED: Use parseFloat here for all base values from food data
+            let keyToUse = '';
             if (unit === 'gram' && nutrientMapping['gram']) { 
-                baseValue = parseFloat(food[nutrientMapping['gram']]) || 0; 
-                calculatedValue = baseValue * quantity;
+                keyToUse = nutrientMapping['gram'];
             } else if (unit === 'ounce' && nutrientMapping['ounce']) { 
-                baseValue = parseFloat(food[nutrientMapping['ounce']]) || 0; 
-                calculatedValue = baseValue * quantity;
+                keyToUse = nutrientMapping['ounce'];
             }
 
+            // --- IMPORTANT: Robust parsing for baseValue from food data ---
+            // Parse the value from the JSON. If it's "N/A" or not a valid number, it becomes NaN,
+            // then defaults to 0 for calculations using the || 0.
+            baseValue = parseFloat(food[keyToUse]) || 0; 
+            calculatedValue = baseValue * quantity;
+
             // --- LOGIC FOR CALORIES ESTIMATION ---
-            // This is where the calculation happens, safely inside the function
-            if (nutrientDisplayName === "Calories" && (calculatedValue === 'N/A' || isNaN(calculatedValue))) {
-                const proteinKey = nutrientGroups.Macros.Protein[unit];
-                const fatKey = nutrientGroups.Macros.Fat[unit];
-                const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
+            if (nutrientDisplayName === "Calories") {
+                // Check if the original 'Calories' value was effectively "N/A" or invalid.
+                // We use parseFloat on the original food[keyToUse] to see if it's a valid number.
+                const originalCaloriesValue = parseFloat(food[nutrientMapping[unit]]);
+                if (isNaN(originalCaloriesValue) || originalCaloriesValue === 0) { // Also check for 0 to re-estimate if necessary
+                    const proteinKey = nutrientGroups.Macros.Protein[unit];
+                    const fatKey = nutrientGroups.Macros.Fat[unit];
+                    const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
 
-                // MODIFIED: Apply parseFloat here for macro values from food data
-                const proteinVal = parseFloat(food[proteinKey]) || 0; 
-                const fatVal = parseFloat(food[fatKey]) || 0;         
-                const carbsVal = parseFloat(food[carbsKey]) || 0;     
+                    // Apply parseFloat directly to macro values from food data, default to 0 if N/A or invalid
+                    const proteinVal = parseFloat(food[proteinKey]) || 0; 
+                    const fatVal = parseFloat(food[fatKey]) || 0;         
+                    const carbsVal = parseFloat(food[carbsKey]) || 0;     
 
-                // Only estimate if at least one macronutrient is available
-                if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
-                    const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
-                    calculatedValue = estimatedBaseCalories * quantity;
-                    isEstimated = true;
-                    displayUnit = 'kcal'; // Ensure unit is kcal for estimated calories
+                    // Only estimate if at least one macronutrient is available
+                    if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
+                        const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+                        calculatedValue = estimatedBaseCalories * quantity;
+                        isEstimated = true;
+                        displayUnit = 'kcal'; // Ensure unit is kcal for estimated calories
+                    } else {
+                        // If no macros are available either, then it's genuinely N/A
+                        calculatedValue = 'N/A';
+                    }
+                } else {
+                    // If original calories value is valid, use it.
+                    calculatedValue = originalCaloriesValue * quantity;
                 }
             }
             // --- END LOGIC FOR CALORIES ESTIMATION ---
@@ -479,7 +490,7 @@ function displayFoodDetails(food) {
 
     reconnectedUnitSelect.addEventListener('change', () => {
         if (currentFoodDetails) {
-            updateNutientDetailsDisplay(currentFoodDetails, 
+            updateNutrientDetailsDisplay(currentFoodDetails, 
                                          parseFloat(reconnectedQuantityInput.value), 
                                          reconnectedUnitSelect.value);
         }
