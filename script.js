@@ -182,11 +182,23 @@ function displaySearchResults(query) {
         return;
     }
 
-    const lowerCaseQuery = query.toLowerCase();
-    // Filter food data based on the search query (case-insensitive).
-    const results = foodData.filter(food =>
-        food['Food Name'] && food['Food Name'].toLowerCase().includes(lowerCaseQuery)
-    );
+    const lowerCaseQuery = query.toLowerCase().trim(); // Trim whitespace
+    // Split the query into individual words, filtering out empty strings
+    const queryWords = lowerCaseQuery.split(/\s+/).filter(word => word.length > 0);
+
+    if (queryWords.length === 0) { // Check if there are any meaningful words after splitting
+        searchResultsList.innerHTML = '<p class="info-message">Please enter valid search terms.</p>';
+        return;
+    }
+
+    // Filter food data based on the search query (case-insensitive, all words match)
+    const results = foodData.filter(food => {
+        const foodNameLowerCase = food['Food Name'] ? food['Food Name'].toLowerCase() : '';
+        
+        // Check if the foodNameLowerCase includes ALL words from the queryWords array
+        // This makes the search more flexible, matching words in any order.
+        return queryWords.every(word => foodNameLowerCase.includes(word));
+    });
 
     if (results.length === 0) {
         // Display a message if no results are found, sanitizing the query.
