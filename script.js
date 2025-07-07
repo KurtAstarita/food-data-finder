@@ -91,7 +91,7 @@ function renderTable() {
     const sampleFood = foodData[0]; // Use the first food item to determine available columns.
     
     // *** CHANGE THIS LINE ***
-    const primaryCols = ['Food']; // Changed from 'Food Name'
+    const primaryCols = ['Food Name']; // Changed from 'Food Name'
     
     const nutrientColsForTable = [
         "Calories (per 100g)",
