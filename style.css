@@ -541,3 +541,125 @@ hr {
     font-size: 0.8em; /* Smaller arrow */
     color: #555; /* Subtle color */
 }
+
+/* Branding Container Styles */
+.branding-container {
+  text-align: center;
+  margin-top: 30px;
+  padding: 15px 0;
+  background-color: #f8f8f8;
+  border-top: 1px solid #eee;
+}
+
+.branding-container a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: 600;
+  padding: 8px 15px;
+  border: 1px solid #007bff;
+  border-radius: 5px;
+  background-color: white;
+  margin-left: 10px;
+}
+
+.branding-container span {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+@media (max-width: 600px) {
+  .branding-container {
+    margin-top: 20px;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .branding-container a {
+    font-size: 0.9em;
+    padding: 6px 10px;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+
+  .branding-container span {
+    font-size: 0.9em;
+    margin-right: 0;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+  .branding-container {
+    margin-top: 25px;
+    padding: 12px 0;
+  }
+
+  .branding-container a {
+    font-size: 1em;
+    padding: 7px 12px;
+  }
+
+  .branding-container span {
+    font-size: 1em;
+  }
+}
+
+/* Footer Styles */
+footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  font-size: 0.9em;
+  color: #666;
+}
+
+footer a {
+  text-decoration: none;
+  color: #007bff;
+}
+
+/* -------------------- Social Share Styles --------------------------- */
+
+.social-share {
+  margin-top: 2em;
+  padding: 1em;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.social-share h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.2em;
+  margin-bottom: 0.5em;
+}
+
+.social-share ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-block; /* To center the list */
+}
+
+.social-share li {
+  display: inline-block;
+  margin: 0 0.5em;
+}
+
+.social-share li a {
+  display: block;
+}
+
+.social-share img {
+  width: 32px; /* Adjust size as needed */
+  height: 32px;
+  border-radius: 5px; /* Optional: circular icons */
+  transition: transform 0.2s ease-in-out;
+}
+
+.social-share img:hover {
+  transform: scale(1.1);
+}
