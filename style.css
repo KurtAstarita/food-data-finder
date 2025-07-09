@@ -31,6 +31,33 @@ h2 {
     font-size: 26px;
 }
 
+/* Header Section Controls (to hold both download buttons) */
+.header-controls {
+    text-align: center;
+    margin-bottom: 20px; /* Space below the buttons */
+    display: flex; /* Arrange buttons side-by-side */
+    justify-content: center; /* Center the buttons */
+    gap: 15px; /* Space between buttons */
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+/* Consolidated styling for download buttons */
+.download-button { /* Applied to both JSON and CSV buttons */
+    padding: 10px 20px;
+    background-color: #28a745; /* Green color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.2s ease;
+    white-space: nowrap; /* Prevent text from wrapping inside the button */
+}
+
+.download-button:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
 
 /* Search Section Styling */
 .search-section {
@@ -166,26 +193,12 @@ hr {
     margin: 40px 0;
 }
 
-/* Data Overview Section (Total Foods, Download Button) */
+/* Data Overview Section (Total Foods) - Removed previous download button style from here */
 .data-overview {
     text-align: center;
     margin-bottom: 20px;
 }
 
-#downloadJsonButton {
-    padding: 10px 20px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 15px;
-    transition: background-color 0.2s ease;
-}
-
-#downloadJsonButton:hover {
-    background-color: #218838;
-}
 
 /* All Foods Table Section */
 .all-foods-section {
@@ -295,6 +308,15 @@ hr {
         margin-bottom: 20px;
     }
 
+    /* Adjust header controls for smaller screens */
+    .header-controls {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px;
+    }
+    .download-button {
+        width: 100%; /* Make buttons full width */
+    }
+
     .search-section {
         flex-direction: column; /* Stack input and button vertically */
         gap: 15px;
@@ -315,7 +337,7 @@ hr {
     .nutrient-list {
         grid-template-columns: 1fr; /* Single column on small screens */
     }
-    
+
     /* Make table scrollable vertically within its container on small screens */
     .table-container {
         max-height: 400px; /* Adjust height for mobile */
