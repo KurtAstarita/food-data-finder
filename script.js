@@ -546,24 +546,116 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- NEW: Download PDF functionality ---
-    downloadPdfButton.addEventListener('click', () => {
-        if (currentFoodDetails) {
-            const foodDetailsElement = document.getElementById('foodDetails');
+// --- NEW: Download PDF functionality using jsPDF-AutoTable ---
+downloadPdfButton.addEventListener('click', () => {
+    if (!currentFoodDetails) {
+        alert('Please view a food item\'s details first to generate a PDF.');
+        return;
+    }
 
-            const options = {
-                margin: 10,
-                filename: `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_nutrition_report.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+    // Get current quantity and unit from the input fields
+    const quantityInput = document.getElementById('quantityInput');
+    const unitSelect = document.getElementById('unitSelect');
+    let currentQuantity = parseFloat(quantityInput.value) || 1;
+    let currentUnit = unitSelect.value || 'gram';
 
-            html2pdf().set(options).from(foodDetailsElement).save();
-        } else {
-            alert('Please view a food item\'s details first to generate a PDF.');
+    // Create a new jsPDF instance
+    const { jsPDF } = window.jspdf; // Get jsPDF from the window object
+    const doc = new jsPDF();
+
+    // Set the title of the PDF
+    doc.setFontSize(16);
+    doc.text(`Nutrition Report: ${currentFoodDetails['Food Name']}`, 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Serving: ${currentQuantity} ${currentUnit}(s)`, 14, 30);
+    
+    let yOffset = 40; // Initial Y position for the first table
+
+    // Prepare table data
+    const tableHeaders = [['Nutrient', 'Value', 'Unit']];
+    let allTableData = [];
+
+    for (const groupCategory in nutrientGroups) {
+        // Add a section header for each group
+        allTableData.push([{ content: groupCategory, colSpan: 3, styles: { fontStyle: 'bold', fillColor: '#EEEEEE', textColor: '#000000', halign: 'center' }}]);
+
+        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
+            const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
+            
+            let baseValue = 0;
+            let calculatedValue = 'N/A';
+            let displayUnit = nutrientMapping.displayUnit || '';
+            let isEstimated = false;
+
+            let keyToUse = '';
+            if (currentUnit === 'gram' && nutrientMapping['gram']) { 
+                keyToUse = nutrientMapping['gram'];
+            } else if (currentUnit === 'ounce' && nutrientMapping['ounce']) { 
+                keyToUse = nutrientMapping['ounce'];
+            }
+
+            baseValue = parseFloat(currentFoodDetails[keyToUse]) || 0; 
+            calculatedValue = baseValue * currentQuantity;
+
+            // Recalculate Calories for estimation if needed, similar to updateNutrientDetailsDisplay
+            if (nutrientDisplayName === "Calories") {
+                const originalCaloriesValue = parseFloat(currentFoodDetails[nutrientMapping[currentUnit]]);
+                if (isNaN(originalCaloriesValue) || originalCaloriesValue === 0) { 
+                    const proteinKey = nutrientGroups.Macros.Protein[currentUnit];
+                    const fatKey = nutrientGroups.Macros.Fat[currentUnit];
+                    const carbsKey = nutrientGroups.Macros.Carbohydrates[currentUnit];
+
+                    const proteinVal = parseFloat(currentFoodDetails[proteinKey]) || 0; 
+                    const fatVal = parseFloat(currentFoodDetails[fatKey]) || 0;         
+                    const carbsVal = parseFloat(currentFoodDetails[carbsKey]) || 0;     
+
+                    if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
+                        const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+                        calculatedValue = estimatedBaseCalories * currentQuantity;
+                        isEstimated = true;
+                        displayUnit = 'kcal';
+                    } else {
+                        calculatedValue = 'N/A';
+                    }
+                } else {
+                    calculatedValue = originalCaloriesValue * currentQuantity;
+                }
+            }
+
+            const formattedDisplayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
+            
+            let nutrientLabel = nutrientDisplayName;
+            if (isEstimated) {
+                nutrientLabel += ' (Estimated)';
+            }
+            
+            allTableData.push([nutrientLabel, formattedDisplayValue, displayUnit]);
+        }
+    }
+
+    // Generate the table
+    doc.autoTable({
+        startY: yOffset,
+        head: tableHeaders,
+        body: allTableData,
+        theme: 'striped', // 'striped', 'grid', 'plain'
+        headStyles: { fillColor: '#4CAF50', textColor: '#FFFFFF', fontStyle: 'bold' },
+        styles: { cellPadding: 2, fontSize: 10 },
+        margin: { top: 10, right: 10, bottom: 10, left: 10 },
+        didDrawPage: function (data) {
+            // Footer (optional: add page numbers)
+            let str = "Page " + doc.internal.getNumberOfPages();
+            doc.setFontSize(10);
+            let pageSize = doc.internal.pageSize;
+            let pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+            doc.text(str, data.settings.margin.left, pageHeight - 10);
         }
     });
+
+    // Save the PDF
+    const filename = `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_nutrition_report.pdf`;
+    doc.save(filename);
+});
 
     // Initial load of data when the page loads.
     loadFoodData();
