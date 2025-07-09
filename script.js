@@ -1,9 +1,6 @@
 // script.js
 
 // 1. --- Global Constants & Variable Declarations ---
-// This object defines the structure for displaying nutrients, mapping user-friendly names
-// to the exact keys found in your food_data.json for different units.
-// NOW INCLUDES 'displayUnit' FOR EACH NUTRIENT!
 const nutrientGroups = {
     "Macros": {
         "Calories": { "100g": "Calories (per 100g)", "gram": "Calories (per gram)", "ounce": "Calories (per ounce)", "displayUnit": "kcal" },
@@ -506,11 +503,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResultsList = document.getElementById('searchResults');
     const foodDetailsDiv = document.getElementById('foodDetails'); // Main container for details
     const totalFoodsCountSpan = document.getElementById('totalFoodsCount');
-    const downloadJsonButton = document.getElementById('downloadJsonButton');
+    // Removed downloadJsonButton
     const prevPageButton = document.getElementById('prevPage');
     const nextPageButton = document.getElementById('nextPage');
     const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
-    // Note: tableHeader and tableBody are used directly in renderTable, no need to get them here.
+
+    // NEW: Get the PDF download button
+    const downloadPdfButton = document.getElementById('downloadPdfButton');
+
 
     // Event listeners for pagination controls.
     prevPageButton.addEventListener('click', () => {
@@ -546,22 +546,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Download JSON functionality ---
-    // Event listener for the download button.
-    downloadJsonButton.addEventListener('click', () => {
-        const dataStr = JSON.stringify(foodData, null, 4); // Pretty print the JSON data.
-        const blob = new Blob([dataStr], { type: 'application/json' }); // Create a Blob from the JSON string.
-        const url = URL.createObjectURL(blob); // Create a URL for the Blob.
-        const a = document.createElement('a'); // Create a temporary anchor element.
-        a.href = url;
-        a.download = 'food_nutrition_data.json'; // Set the download file name.
-        document.body.appendChild(a); // Append to body to make it clickable.
-        a.click(); // Programmatically click the link to trigger download.
-        document.body.removeChild(a); // Clean up the temporary link.
-        URL.revokeObjectURL(url); // Release the object URL.
+    // --- NEW: Download PDF functionality ---
+    downloadPdfButton.addEventListener('click', () => {
+        if (currentFoodDetails) {
+            const foodDetailsElement = document.getElementById('foodDetails');
+
+            const options = {
+                margin: 10,
+                filename: `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_nutrition_report.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(options).from(foodDetailsElement).save();
+        } else {
+            alert('Please view a food item\'s details first to generate a PDF.');
+        }
     });
 
     // Initial load of data when the page loads.
-    // This is the starting point for fetching your food data.
     loadFoodData();
 });
