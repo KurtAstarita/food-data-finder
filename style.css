@@ -44,6 +44,7 @@ h2 {
 /* Consolidated styling for main download buttons */
 .download-button { /* Applied to both JSON and CSV buttons in header */
     padding: 10px 20px;
+    margin-bottom: 10px;
     background-color: #28a745; /* Green color */
     color: white;
     border: none;
