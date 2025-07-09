@@ -271,7 +271,7 @@ hr {
 
 /* Food Table Styling */
 .table-container {
-    overflow-x: auto; /* Enables horizontal scrolling for tables that *must* be wider than the container (e.g., on extremely small screens if the content forces it) or for non-table-layout:fixed elements */
+    overflow-x: auto; /* Enables horizontal scrolling for wide tables */
     max-height: 500px; /* Limit height for scrollable table */
 }
 
@@ -279,16 +279,13 @@ hr {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    table-layout: fixed; /* <--- This is essential for these widths to work correctly with wrapping */
 }
 
 #foodTable th, #foodTable td {
     border: 1px solid #ddd;
     padding: 10px;
     text-align: left;
-    /* white-space: nowrap; */ /* REMOVED THIS LINE - IT PREVENTS WRAPPING */
-    word-wrap: break-word;   /* ADDED THIS LINE */
-    overflow-wrap: break-word; /* ADDED THIS LINE */
+    white-space: nowrap; /* Prevents text wrapping in cells */
 }
 
 #foodTable th {
@@ -298,15 +295,6 @@ hr {
     top: 0;
     z-index: 1; /* Keep header on top when scrolling */
 }
-
-/* ADD THESE NEW COLUMN WIDTH RULES BELOW */
-#foodTable th:nth-child(1) { width: 30%; /* For 'Food Name' */ }
-#foodTable th:nth-child(2) { width: 10%; /* For 'Calories' */ }
-#foodTable th:nth-child(3) { width: 10%; /* For 'Protein' */ }
-/* You will need to continue this pattern for ALL your table headers (th)
-   Make sure the percentages add up to 100% or slightly less to account for borders.
-   If you have a 'Details' button column, you might give it a fixed pixel width like 80px or 100px. */
-
 
 #foodTable tbody tr:nth-child(even) {
     background-color: #f9f9f9;
