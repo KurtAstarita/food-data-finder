@@ -41,8 +41,8 @@ h2 {
     flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
 }
 
-/* Consolidated styling for download buttons */
-.download-button { /* Applied to both JSON and CSV buttons */
+/* Consolidated styling for main download buttons */
+.download-button { /* Applied to both JSON and CSV buttons in header */
     padding: 10px 20px;
     background-color: #28a745; /* Green color */
     color: white;
@@ -56,6 +56,32 @@ h2 {
 
 .download-button:hover {
     background-color: #218838; /* Darker green on hover */
+}
+
+/* NEW: Styling for specific food download buttons */
+.food-details-download-buttons {
+    display: flex;
+    gap: 10px; /* Space between the two buttons */
+    margin-left: auto; /* Pushes these buttons to the right within flex container */
+    flex-shrink: 0; /* Prevents them from shrinking */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: flex-end; /* Align to the right if wrapped */
+}
+
+.download-button-small {
+    padding: 8px 15px; /* Slightly smaller padding */
+    background-color: #007bff; /* Blue color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px; /* Slightly smaller font */
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.download-button-small:hover {
+    background-color: #0056b3; /* Darker blue on hover */
 }
 
 
@@ -341,6 +367,17 @@ hr {
     /* Make table scrollable vertically within its container on small screens */
     .table-container {
         max-height: 400px; /* Adjust height for mobile */
+    }
+
+    /* NEW: Adjust food-specific download buttons for mobile */
+    .food-details-download-buttons {
+        margin-left: 0; /* Remove auto margin */
+        justify-content: center; /* Center buttons when stacked */
+        width: 100%; /* Take full width */
+        margin-top: 15px; /* Add space above if wrapping */
+    }
+    .download-button-small {
+        flex-grow: 1; /* Allow buttons to fill available width */
     }
 }
 
