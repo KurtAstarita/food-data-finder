@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Food Nutrition Finder</title>
     <link rel="stylesheet" href="style.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://speedcf.cloudflareaccess.com; style-src 'self' 'sha256-+OsIn6RhyCZCUkkvtHxFtP0kU3CGdGeLjDd9Fzqdl3o='; img-src 'self' data:; font-src 'self'; object-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'sha256-+OsIn6RhyCZCUkkvtHxFtP0kU3CGdGeLjDd9Fzqdl3o='; img-src 'self' data:; font-src 'self'; object-src 'none'">
 </head>
 <body>
     <div class="container">
@@ -34,7 +34,7 @@
         <h2>Explore All Foods</h2>
         <div class="data-overview">
             <p>Total Foods Available: <span id="totalFoodsCount">Loading...</span></p>
-            <button id="downloadPdfButton" class="action-button">Download Current Food as PDF</button>
+            <button id="downloadJsonButton">Download Full Data (JSON)</button>
         </div>
 
         <div class="all-foods-section">
@@ -62,8 +62,6 @@
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.3/purify.min.js" integrity="sha384-qJaFLR94cBwplPg5rmD8f0sxHL6Ypdh0d1sbaU8lc3q6J4Poowsb3w+uQ5e0xUnR" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.autotable.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
