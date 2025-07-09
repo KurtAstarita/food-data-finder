@@ -42,7 +42,7 @@ const nutrientGroups = {
 let foodData = []; // Stores the entire dataset from food_data.json
 let currentPage = 1; // Current page for the main food table
 let itemsPerPage; // Number of items to display per page in the table, set on load
-let currentFoodDetails = null;
+let currentFoodDetails = null; // Stores the food object currently displayed in the details section
 // New global variables for sorting
 let currentSortColumn = 'Food Name'; // Default sort column
 let currentSortDirection = 'asc'; // Default sort direction
@@ -261,7 +261,6 @@ function renderTable() {
     nextPageButton.disabled = currentPage === totalPages;
 }
 
-
 // --- Search Functionality ---
 // Displays search results in a list format.
 function displaySearchResults(query) {
@@ -324,6 +323,81 @@ function displaySearchResults(query) {
         searchResultsList.appendChild(moreResultsInfo);
     }
 }
+
+/**
+ * Generates the current nutrient data displayed in the details section
+ * as an array of objects, suitable for JSON/CSV conversion.
+ * Each object will represent a nutrient with its name, calculated value, and unit.
+ *
+ * @param {Object} food - The current food item.
+ * @param {number} quantity - The user-specified quantity.
+ * @param {string} unit - The selected unit ('gram', 'ounce').
+ * @returns {Array<Object>} An array of nutrient objects.
+ */
+function getFormattedNutrientDataForDownload(food, quantity, unit) {
+    const nutrientsToExport = [];
+
+    // Ensure quantity is a valid positive number, default to 1 if invalid or zero.
+    quantity = parseFloat(quantity);
+    if (isNaN(quantity) || quantity <= 0) {
+        quantity = 1;
+    }
+
+    for (const groupCategory in nutrientGroups) {
+        for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
+            const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
+
+            let baseValue = 0;
+            let calculatedValue = 'N/A';
+            let displayUnit = nutrientMapping.displayUnit || '';
+            let isEstimated = false;
+
+            let keyToUse = '';
+            if (unit === 'gram' && nutrientMapping['gram']) {
+                keyToUse = nutrientMapping['gram'];
+            } else if (unit === 'ounce' && nutrientMapping['ounce']) {
+                keyToUse = nutrientMapping['ounce'];
+            }
+
+            baseValue = parseFloat(food[keyToUse]) || 0;
+            calculatedValue = baseValue * quantity;
+
+            if (nutrientDisplayName === "Calories") {
+                const originalCaloriesValue = parseFloat(food[nutrientMapping[unit]]);
+                if (isNaN(originalCaloriesValue) || originalCaloriesValue === 0) {
+                    const proteinKey = nutrientGroups.Macros.Protein[unit];
+                    const fatKey = nutrientGroups.Macros.Fat[unit];
+                    const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
+
+                    const proteinVal = parseFloat(food[proteinKey]) || 0;
+                    const fatVal = parseFloat(food[fatKey]) || 0;
+                    const carbsVal = parseFloat(food[carbsKey]) || 0;
+
+                    if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
+                        const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
+                        calculatedValue = estimatedBaseCalories * quantity;
+                        isEstimated = true;
+                        displayUnit = 'kcal';
+                    } else {
+                        calculatedValue = 'N/A';
+                    }
+                } else {
+                    calculatedValue = originalCaloriesValue * quantity;
+                }
+            }
+
+            const formattedDisplayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
+
+            nutrientsToExport.push({
+                "Nutrient": nutrientDisplayName + (isEstimated ? ' (Estimated)' : ''),
+                "Value": formattedDisplayValue,
+                "Unit": displayUnit
+            });
+        }
+    }
+    return nutrientsToExport;
+}
+
 
 /**
  * Renders or re-renders the nutrient details based on the current food, quantity, and unit.
@@ -455,6 +529,10 @@ function displayFoodDetails(food) {
             <option value="gram">gram</option>
             <option value="ounce">ounce</option>
         </select>
+        <div class="food-details-download-buttons">
+            <button id="downloadFoodJsonButton" class="download-button-small">Download JSON</button>
+            <button id="downloadFoodCsvButton" class="download-button-small">Download CSV</button>
+        </div>
     `;
     foodDetailsDiv.appendChild(quantityInputGroup);
 
@@ -466,6 +544,10 @@ function displayFoodDetails(food) {
     // Re-get references to the newly created/appended input elements.
     const reconnectedQuantityInput = document.getElementById('quantityInput');
     const reconnectedUnitSelect = document.getElementById('unitSelect');
+    // NEW: Get references to the new download buttons
+    const downloadFoodJsonButton = document.getElementById('downloadFoodJsonButton');
+    const downloadFoodCsvButton = document.getElementById('downloadFoodCsvButton');
+
 
     // Store the current food object globally for recalculations.
     currentFoodDetails = food;
@@ -476,26 +558,68 @@ function displayFoodDetails(food) {
 
     // Perform initial display of nutrient details based on default quantity/unit.
     updateNutrientDetailsDisplay(currentFoodDetails,
-        parseFloat(reconnectedQuantityInput.value),
-        reconnectedUnitSelect.value);
+                                 parseFloat(reconnectedQuantityInput.value),
+                                 reconnectedUnitSelect.value);
 
     // Add event listeners to quantity and unit inputs for dynamic updates.
     reconnectedQuantityInput.addEventListener('input', () => {
         if (currentFoodDetails) {
             updateNutrientDetailsDisplay(currentFoodDetails,
-                parseFloat(reconnectedQuantityInput.value),
-                reconnectedUnitSelect.value);
+                                         parseFloat(reconnectedQuantityInput.value),
+                                         reconnectedUnitSelect.value);
         }
     });
 
     reconnectedUnitSelect.addEventListener('change', () => {
         if (currentFoodDetails) {
             updateNutrientDetailsDisplay(currentFoodDetails,
-                parseFloat(reconnectedQuantityInput.value),
-                reconnectedUnitSelect.value);
+                                         parseFloat(reconnectedQuantityInput.value),
+                                         reconnectedUnitSelect.value);
+        }
+    });
+
+    // NEW: Event listeners for specific food download buttons
+    downloadFoodJsonButton.addEventListener('click', () => {
+        if (currentFoodDetails) {
+            const quantity = parseFloat(reconnectedQuantityInput.value);
+            const unit = reconnectedUnitSelect.value;
+            const dataToDownload = getFormattedNutrientDataForDownload(currentFoodDetails, quantity, unit);
+
+            const filename = `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_${quantity}${unit}_nutrition.json`;
+            const dataStr = JSON.stringify(dataToDownload, null, 4);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+
+    downloadFoodCsvButton.addEventListener('click', () => {
+        if (currentFoodDetails) {
+            const quantity = parseFloat(reconnectedQuantityInput.value);
+            const unit = reconnectedUnitSelect.value;
+            const dataToDownload = getFormattedNutrientDataForDownload(currentFoodDetails, quantity, unit);
+
+            const filename = `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_${quantity}${unit}_nutrition.csv`;
+            const csvContent = convertToCsv(dataToDownload); // Re-use the existing CSV conversion
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     });
 }
+
 
 /**
  * Converts an array of objects into a CSV string.
@@ -510,37 +634,28 @@ function convertToCsv(data) {
         return '';
     }
 
-    const headers = new Set();
-    // Collect all unique keys from all objects to form the header
-    data.forEach(item => {
-        for (const key in item) {
-            if (item.hasOwnProperty(key)) {
-                headers.add(key);
-            }
-        }
-    });
-
-    const headerArray = Array.from(headers);
+    // Use the keys from the first object as headers, assuming all objects have similar structure
+    // This is robust for the `getFormattedNutrientDataForDownload` output
+    const headers = Object.keys(data[0]);
     const csvRows = [];
 
     // Add header row
-    csvRows.push(headerArray.map(header => `"${header.replace(/"/g, '""')}"`).join(','));
+    csvRows.push(headers.map(header => `"${header.replace(/"/g, '""')}"`).join(','));
 
     // Add data rows
     data.forEach(item => {
-        const row = headerArray.map(header => {
+        const row = headers.map(header => {
             let value = item[header];
             if (value === undefined || value === null) {
                 value = ''; // Handle undefined or null values
             } else if (typeof value === 'object') {
-                // If the value is an object (e.g., if you had nested JSON), stringify it.
-                // For simplicity, we're just stringifying. More complex flattening might be needed for deeply nested data.
+                // If the value is an object, stringify it.
                 value = JSON.stringify(value);
             } else {
                 value = String(value); // Ensure it's a string
             }
 
-            // Escape double quotes and enclose in double quotes if value contains comma or double quote
+            // Escape double quotes and enclose in double quotes if value contains comma or double quote or newline
             if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
                 return `"${value.replace(/"/g, '""')}"`;
             }
@@ -602,8 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Download JSON functionality ---
-    // Event listener for the download button.
+    // --- Download JSON functionality (All Data) ---
     downloadJsonButton.addEventListener('click', () => {
         const dataStr = JSON.stringify(foodData, null, 4); // Pretty print the JSON data.
         const blob = new Blob([dataStr], { type: 'application/json' }); // Create a Blob from the JSON string.
@@ -617,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url); // Release the object URL.
     });
 
-    // --- NEW: Download CSV functionality ---
+    // --- Download CSV functionality (All Data) ---
     downloadCsvButton.addEventListener('click', () => {
         const csvContent = convertToCsv(foodData); // Convert all food data to CSV
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -632,6 +746,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial load of data when the page loads.
-    // This is the starting point for fetching your food data.
     loadFoodData();
 });
