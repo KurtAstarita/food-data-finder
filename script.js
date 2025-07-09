@@ -1,6 +1,9 @@
 // script.js
 
 // 1. --- Global Constants & Variable Declarations ---
+// This object defines the structure for displaying nutrients, mapping user-friendly names
+// to the exact keys found in your food_data.json for different units.
+// NOW INCLUDES 'displayUnit' FOR EACH NUTRIENT!
 const nutrientGroups = {
     "Macros": {
         "Calories": { "100g": "Calories (per 100g)", "gram": "Calories (per gram)", "ounce": "Calories (per ounce)", "displayUnit": "kcal" },
@@ -34,6 +37,7 @@ const nutrientGroups = {
         "Vitamin K": { "100g": "Vitamin K (per 100g)", "gram": "Vitamin K (per gram)", "ounce": "Vitamin K (per ounce)", "displayUnit": "mcg" }
     }
 };
+
 // Global variables to manage food data, pagination, and currently displayed food details.
 let foodData = []; // Stores the entire dataset from food_data.json
 let currentPage = 1; // Current page for the main food table
@@ -108,7 +112,7 @@ function renderTable() {
         "Fiber dietary (per 100g)",
         "Sodium (per 100g)"
     ];
-
+        
     const displayColumns = [...primaryCols];
     nutrientColsForTable.forEach(col => {
         if (sampleFood.hasOwnProperty(col)) {
@@ -121,7 +125,7 @@ function renderTable() {
         const th = document.createElement('th');
         // Use .textContent for safety, and remove units from header text for cleaner display.
         th.textContent = col.replace(/\s*\(.*\)\s*$/, '');
-
+        
         // Add a data attribute to store the original column key for sorting
         th.setAttribute('data-column', col);
         th.classList.add('sortable'); // Add a class for styling sortable headers
@@ -138,7 +142,7 @@ function renderTable() {
         th.addEventListener('click', () => {
             handleHeaderClick(col); // Call the new handler function
         });
-
+        
         tableHeader.appendChild(th);
     });
 
@@ -197,16 +201,16 @@ function renderTable() {
             if (col === "Calories (per 100g)") {
                 const originalValue = food[col];
                 // Check if original value is missing or invalid (e.g., "N/A" or undefined)
-                if (typeof originalValue !== 'number' || isNaN(parseFloat(originalValue))) {
+                if (typeof originalValue !== 'number' || isNaN(parseFloat(originalValue))) { 
                     // Get 100g values for macros using the nutrientGroups mapping
                     const proteinKey = nutrientGroups.Macros.Protein["100g"];
                     const fatKey = nutrientGroups.Macros.Fat["100g"];
                     const carbsKey = nutrientGroups.Macros.Carbohydrates["100g"];
 
                     // Retrieve macro values, defaulting to 0 if N/A or invalid
-                    const proteinVal = parseFloat(food[proteinKey]) || 0;
-                    const fatVal = parseFloat(food[fatKey]) || 0;
-                    const carbsVal = parseFloat(food[carbsKey]) || 0;
+                    const proteinVal = parseFloat(food[proteinKey]) || 0; 
+                    const fatVal = parseFloat(food[fatKey]) || 0;         
+                    const carbsVal = parseFloat(food[carbsKey]) || 0; 
 
                     // Only estimate if at least one macronutrient is available
                     if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
@@ -284,7 +288,7 @@ function displaySearchResults(query) {
     // Filter food data based on the search query (case-insensitive, all words match)
     const results = foodData.filter(food => {
         const foodNameLowerCase = food['Food Name'] ? food['Food Name'].toLowerCase() : '';
-
+        
         // Check if the foodNameLowerCase includes ALL words from the queryWords array
         // This makes the search more flexible, matching words in any order.
         return queryWords.every(word => foodNameLowerCase.includes(word));
@@ -292,7 +296,7 @@ function displaySearchResults(query) {
 
     if (results.length === 0) {
         // Display a message if no results are found, sanitizing the query.
-        searchResultsList.innerHTML = `<p class="info-message">No food found matching "${DOMPurify.sanitize(query)}". Try a different search term.</p>`;
+        searchResultsList.innerHTML = `<p class="info-message">No food found matching "${DOMPurify.sanitize(query)}". Try a different search term.</p>`; 
         return;
     }
 
@@ -301,7 +305,7 @@ function displaySearchResults(query) {
         const li = document.createElement('li');
         li.classList.add('result-item');
         // Use .textContent for safety when displaying food name and FDC ID.
-        li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`;
+        li.textContent = `${food['Food Name']} (FDC ID: ${food['fdc_id']})`; 
         li.addEventListener('click', () => {
             // Clear results, show details, and scroll to details section when a result is clicked.
             searchResultsList.innerHTML = '';
@@ -316,7 +320,7 @@ function displaySearchResults(query) {
     if (results.length > 10) {
         const moreResultsInfo = document.createElement('li');
         moreResultsInfo.classList.add('info-message-item');
-        moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`;
+        moreResultsInfo.textContent = `... and ${results.length - 10} more. Refine your search or select from the top 10.`; 
         searchResultsList.appendChild(moreResultsInfo);
     }
 }
@@ -353,7 +357,7 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
         // Iterate through each specific nutrient within the category (e.g., "Energy", "Protein").
         for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
             const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
-
+            
             let baseValue = 0; // Stores the raw nutrient value from the JSON.
             let calculatedValue = 'N/A'; // Stores the calculated value for the given quantity/unit.
             let displayUnit = nutrientMapping.displayUnit || ''; // Get intrinsic displayUnit
@@ -361,16 +365,16 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
 
             // Determine which key to use from the food data based on the selected unit
             let keyToUse = '';
-            if (unit === 'gram' && nutrientMapping['gram']) {
+            if (unit === 'gram' && nutrientMapping['gram']) { 
                 keyToUse = nutrientMapping['gram'];
-            } else if (unit === 'ounce' && nutrientMapping['ounce']) {
+            } else if (unit === 'ounce' && nutrientMapping['ounce']) { 
                 keyToUse = nutrientMapping['ounce'];
             }
 
             // --- IMPORTANT: Robust parsing for baseValue from food data ---
             // Parse the value from the JSON. If it's "N/A" or not a valid number, it becomes NaN,
             // then defaults to 0 for calculations using the || 0.
-            baseValue = parseFloat(food[keyToUse]) || 0;
+            baseValue = parseFloat(food[keyToUse]) || 0; 
             calculatedValue = baseValue * quantity;
 
             // --- LOGIC FOR CALORIES ESTIMATION ---
@@ -384,9 +388,9 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
                     const carbsKey = nutrientGroups.Macros.Carbohydrates[unit];
 
                     // Apply parseFloat directly to macro values from food data, default to 0 if N/A or invalid
-                    const proteinVal = parseFloat(food[proteinKey]) || 0;
-                    const fatVal = parseFloat(food[fatKey]) || 0;
-                    const carbsVal = parseFloat(food[carbsKey]) || 0;
+                    const proteinVal = parseFloat(food[proteinKey]) || 0; 
+                    const fatVal = parseFloat(food[fatKey]) || 0;         
+                    const carbsVal = parseFloat(food[carbsKey]) || 0;     
 
                     // Only estimate if at least one macronutrient is available
                     if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
@@ -407,7 +411,7 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
 
             // Format the calculated value to 2 decimal places or 'N/A'.
             const formattedDisplayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
-
+            
             // Create list item and populate it with sanitized content.
             const listItem = document.createElement('li');
             const sanitizedDisplayName = DOMPurify.sanitize(nutrientDisplayName);
@@ -431,7 +435,7 @@ function updateNutrientDetailsDisplay(food, quantity, unit) {
 // This function sets up the details section, including quantity/unit inputs.
 function displayFoodDetails(food) {
     const foodDetailsDiv = document.getElementById('foodDetails');
-
+    
     // Clear previous content in the entire foodDetailsDiv.
     foodDetailsDiv.innerHTML = '';
     foodDetailsDiv.style.display = 'block'; // Ensure the details section is visible.
@@ -471,24 +475,24 @@ function displayFoodDetails(food) {
     reconnectedUnitSelect.value = 'gram'; // Default to 'gram' since '100g' option is removed.
 
     // Perform initial display of nutrient details based on default quantity/unit.
-    updateNutrientDetailsDisplay(currentFoodDetails,
-        parseFloat(reconnectedQuantityInput.value),
-        reconnectedUnitSelect.value);
+    updateNutrientDetailsDisplay(currentFoodDetails, 
+                                 parseFloat(reconnectedQuantityInput.value), 
+                                 reconnectedUnitSelect.value);
 
     // Add event listeners to quantity and unit inputs for dynamic updates.
     reconnectedQuantityInput.addEventListener('input', () => {
         if (currentFoodDetails) {
-            updateNutrientDetailsDisplay(currentFoodDetails,
-                parseFloat(reconnectedQuantityInput.value),
-                reconnectedUnitSelect.value);
+            updateNutrientDetailsDisplay(currentFoodDetails, 
+                                         parseFloat(reconnectedQuantityInput.value), 
+                                         reconnectedUnitSelect.value);
         }
     });
 
     reconnectedUnitSelect.addEventListener('change', () => {
         if (currentFoodDetails) {
-            updateNutrientDetailsDisplay(currentFoodDetails,
-                parseFloat(reconnectedQuantityInput.value),
-                reconnectedUnitSelect.value);
+            updateNutrientDetailsDisplay(currentFoodDetails, 
+                                         parseFloat(reconnectedQuantityInput.value), 
+                                         reconnectedUnitSelect.value);
         }
     });
 }
@@ -502,14 +506,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchResultsList = document.getElementById('searchResults');
     const foodDetailsDiv = document.getElementById('foodDetails'); // Main container for details
     const totalFoodsCountSpan = document.getElementById('totalFoodsCount');
-    // Removed downloadJsonButton
+    const downloadJsonButton = document.getElementById('downloadJsonButton');
     const prevPageButton = document.getElementById('prevPage');
     const nextPageButton = document.getElementById('nextPage');
     const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
-
-    // NEW: Get the PDF download button
-    const downloadPdfButton = document.getElementById('downloadPdfButton');
-
+    // Note: tableHeader and tableBody are used directly in renderTable, no need to get them here.
 
     // Event listeners for pagination controls.
     prevPageButton.addEventListener('click', () => {
@@ -545,159 +546,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- NEW: Download PDF functionality using jsPDF-AutoTable ---
-    downloadPdfButton.addEventListener('click', () => {
-        if (!currentFoodDetails) {
-            alert('Please view a food item\'s details first to generate a PDF.');
-            return;
-        }
-
-        // Get current quantity and unit from the input fields
-        const quantityInput = document.getElementById('quantityInput');
-        const unitSelect = document.getElementById('unitSelect');
-        let currentQuantity = parseFloat(quantityInput.value) || 1;
-        let currentUnit = unitSelect.value || 'gram';
-
-        // Create a new jsPDF instance
-        const { jsPDF } = window.jspdf; // Get jsPDF from the window object
-        const doc = new jsPDF();
-
-        // Set the title of the PDF
-        doc.setFontSize(16);
-        doc.text(`Nutrition Report: ${currentFoodDetails['Food Name']}`, 14, 20);
-        doc.setFontSize(12);
-        doc.text(`Serving: ${currentQuantity} ${currentUnit}(s)`, 14, 30);
-
-        let yOffset = 40; // Initial Y position for the first table
-
-        // Prepare table data
-        const tableHeaders = [['Nutrient', 'Value', 'Unit']];
-        let allTableData = [];
-        let sectionRowIndexes = []; // To store indexes of section headers for didParseCell
-
-        let currentRowIndex = 0; // Keep track of rows for section headers
-
-        for (const groupCategory in nutrientGroups) {
-            // Add a section header for each group
-            allTableData.push([
-                { content: groupCategory, colSpan: 3, styles: { fontStyle: 'bold', fillColor: '#EEEEEE', textColor: '#000000', halign: 'center' } }
-            ]);
-            sectionRowIndexes.push(currentRowIndex); // Store the index of this section header
-            currentRowIndex++;
-
-            for (const nutrientDisplayName in nutrientGroups[groupCategory]) {
-                const nutrientMapping = nutrientGroups[groupCategory][nutrientDisplayName];
-
-                let baseValue = 0;
-                let calculatedValue = 'N/A';
-                let displayUnit = nutrientMapping.displayUnit || '';
-                let isEstimated = false;
-
-                let keyToUse = '';
-                if (currentUnit === 'gram' && nutrientMapping['gram']) {
-                    keyToUse = nutrientMapping['gram'];
-                } else if (currentUnit === 'ounce' && nutrientMapping['ounce']) {
-                    keyToUse = nutrientMapping['ounce'];
-                }
-
-                baseValue = parseFloat(currentFoodDetails[keyToUse]) || 0;
-                calculatedValue = baseValue * currentQuantity;
-
-                // Recalculate Calories for estimation if needed, similar to updateNutrientDetailsDisplay
-                if (nutrientDisplayName === "Calories") {
-                    const originalCaloriesValue = parseFloat(currentFoodDetails[nutrientMapping[currentUnit]]);
-                    if (isNaN(originalCaloriesValue) || originalCaloriesValue === 0) {
-                        const proteinKey = nutrientGroups.Macros.Protein[currentUnit];
-                        const fatKey = nutrientGroups.Macros.Fat[currentUnit];
-                        const carbsKey = nutrientGroups.Macros.Carbohydrates[currentUnit];
-
-                        const proteinVal = parseFloat(currentFoodDetails[proteinKey]) || 0;
-                        const fatVal = parseFloat(currentFoodDetails[fatKey]) || 0;
-                        const carbsVal = parseFloat(currentFoodDetails[carbsKey]) || 0;
-
-                        if (proteinVal > 0 || fatVal > 0 || carbsVal > 0) {
-                            const estimatedBaseCalories = (proteinVal * 4) + (carbsVal * 4) + (fatVal * 9);
-                            calculatedValue = estimatedBaseCalories * currentQuantity;
-                            isEstimated = true;
-                            displayUnit = 'kcal';
-                        } else {
-                            calculatedValue = 'N/A';
-                        }
-                    } else {
-                        calculatedValue = originalCaloriesValue * currentQuantity;
-                    }
-                }
-
-                const formattedDisplayValue = (typeof calculatedValue === 'number' && !isNaN(calculatedValue)) ? calculatedValue.toFixed(2) : 'N/A';
-
-                let nutrientLabel = nutrientDisplayName;
-                if (isEstimated) {
-                    nutrientLabel += ' (Estimated)';
-                }
-
-                allTableData.push([nutrientLabel, formattedDisplayValue, displayUnit]);
-                currentRowIndex++;
-            }
-        }
-
-        // Generate the table
-        doc.autoTable({
-            startY: yOffset,
-            head: tableHeaders,
-            body: allTableData,
-            theme: 'striped', // 'striped', 'grid', 'plain'
-            headStyles: { fillColor: '#4CAF50', textColor: '#FFFFFF', fontStyle: 'bold' },
-            styles: { cellPadding: 2, fontSize: 10 },
-            margin: { top: 10, right: 10, bottom: 10, left: 10 },
-            // --- IMPORTANT: Use didParseCell for dynamic styling ---
-            didParseCell: function (data) {
-                // Apply styling to the section headers within the table body
-                if (data.section === 'body' && data.column.index === 0 && data.cell.raw.content) {
-                    // Check if this row index corresponds to a section header
-                    const isSectionHeader = sectionRowIndexes.includes(data.row.index);
-
-                    if (isSectionHeader) {
-                        // Apply bold font and a light gray background for section headers
-                        data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.fillColor = '#E0E0E0'; // Lighter gray for section background
-                        data.cell.styles.textColor = '#333333'; // Darker text for readability
-                        data.cell.styles.halign = 'center'; // Center align the section title
-                        data.cell.styles.valign = 'middle';
-                        data.cell.styles.fontSize = 11; // Slightly larger font for headers
-                    } else {
-                        // This is a regular nutrient row. Apply alternating row colors.
-                        if (data.row.index % 2 === 0) { // Check if row index is even
-                            data.cell.styles.fillColor = [245, 245, 245]; // Light gray for even rows
-                        } else {
-                            delete data.cell.styles.fillColor; // No fill for odd rows
-                        }
-                    }
-                }
-
-                // Apply special styling for 'Estimated' values in the 'Value' column
-                if (data.section === 'body' && data.column.index === 1) { // Assuming 'Value' is the second column (index 1)
-                    const cellText = data.cell.text[0]; // Get the displayed text
-                    if (cellText && cellText.includes('(Estimated)')) {
-                        data.cell.styles.textColor = '#707070'; // Dim the estimated value text a bit
-                        data.cell.styles.fontStyle = 'italic'; // Make it italic
-                    }
-                }
-            },
-            didDrawPage: function (data) {
-                // Footer (optional: add page numbers)
-                let str = "Page " + doc.internal.getNumberOfPages();
-                doc.setFontSize(10);
-                let pageSize = doc.internal.pageSize;
-                let pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                doc.text(str, data.settings.margin.left, pageHeight - 10);
-            }
-        });
-
-        // Save the PDF
-        const filename = `${currentFoodDetails['Food Name'].replace(/[^a-z0-9]/gi, '_')}_nutrition_report.pdf`;
-        doc.save(filename);
+    // --- Download JSON functionality ---
+    // Event listener for the download button.
+    downloadJsonButton.addEventListener('click', () => {
+        const dataStr = JSON.stringify(foodData, null, 4); // Pretty print the JSON data.
+        const blob = new Blob([dataStr], { type: 'application/json' }); // Create a Blob from the JSON string.
+        const url = URL.createObjectURL(blob); // Create a URL for the Blob.
+        const a = document.createElement('a'); // Create a temporary anchor element.
+        a.href = url;
+        a.download = 'food_nutrition_data.json'; // Set the download file name.
+        document.body.appendChild(a); // Append to body to make it clickable.
+        a.click(); // Programmatically click the link to trigger download.
+        document.body.removeChild(a); // Clean up the temporary link.
+        URL.revokeObjectURL(url); // Release the object URL.
     });
 
     // Initial load of data when the page loads.
+    // This is the starting point for fetching your food data.
     loadFoodData();
 });
