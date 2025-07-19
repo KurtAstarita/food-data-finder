@@ -12326,9 +12326,9 @@
     {
         "fdc_id":1105897,
         "Food Name":"Apples, fuji, with skin, raw",
-        "Calories (per 100g)":N\/A,
-        "Calories (per gram)":N\/A,
-        "Calories (per ounce)":N\/A,
+        "Calories (per 100g)":"N\/A",
+        "Calories (per gram)":"N\/A",
+        "Calories (per ounce)":"N\/A",
         "Protein (per 100g)":0.15,
         "Protein (per gram)":0.0015,
         "Protein (per ounce)":0.0425,
